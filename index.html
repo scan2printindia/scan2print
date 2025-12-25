@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scan2Print – Upload</title>
+
+  <!-- Uploadcare -->
+  <script>
+    UPLOADCARE_PUBLIC_KEY = "391d407e7314b71facae";
+  </script>
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f6f6;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .box {
+      background: #fff;
+      max-width: 560px;
+      margin: auto;
+      padding: 35px 25px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.15);
+      text-align: center;
+    }
+
+    /* ✅ CLEAN, HALF-SIZE LOGO */
+    .logo {
+      width: 50%;              /* HALF SIZE */
+      max-width: 280px;        /* hard cap */
+      height: auto;
+      display: block;
+      margin: 0 auto 25px;
+    }
+
+    h3 {
+      margin: 5px 0 25px;
+      font-size: 18px;
+    }
+
+    #status {
+      margin-top: 18px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    #refreshBtn {
+      margin-top: 20px;
+      padding: 12px 22px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #2d7ff9;
+      color: #fff;
+      cursor: pointer;
+      display: none;
+    }
+
+    #refreshBtn:hover {
+      background: #1f66d1;
+    }
+
+    @media (max-width: 600px) {
+      .box {
+        max-width: 100%;
+        padding: 30px 18px;
+      }
+
+      .logo {
+        width: 70%;          /* slightly larger on mobile */
+        max-width: 260px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <!-- LOGO -->
+  <img src="logo.png" alt="Scan2Print" class="logo">
+
+  <h3>Upload file for printing</h3>
+
+  <input
+    type="hidden"
+    role="uploadcare-uploader"
+    data-clearable
+    data-multiple="false"
+    data-file-types="pdf jpg jpeg png doc docx"
+    id="uploader"
+  />
+
+  <div id="status"></div>
+
+  <button id="refreshBtn" onclick="resetPage()">
+    🔄 Upload another file
+  </button>
+
+</div>
+
+<script>
+  const shop =
+    new URLSearchParams(window.location.search).get("shop");
+
+  if (!shop) {
+    document.getElementById("status").innerText =
+      "❌ Invalid shop link";
+    throw new Error("Missing shop");
+  }
+
+  function resetPage() {
+    window.location.reload();
+  }
+
+  const widget = uploadcare.Widget("#uploader");
+
+  widget.onUploadComplete(info => {
+    document.getElementById("status").innerText =
+      "Uploading to print shop…";
+
+    fetch(
+      "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec",
+      {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          shop: shop,
+          fileName: info.name,
+          fileUrl: info.cdnUrl
+        })
+      }
+    );
+
+    document.getElementById("status").innerText =
+      "✅ File received. Please wait at the counter.";
+
+    document.getElementById("refreshBtn").style.display =
+      "inline-block";
+  });
+</script>
+
+</body>
+</html>
