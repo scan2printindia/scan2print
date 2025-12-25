@@ -1,121 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Scan2Print – Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body { font-family: Arial; background:#f6f6f6; padding:30px; margin:0 }
-.box { background:#fff; max-width:900px; margin:auto; padding:25px; border-radius:10px }
-.header { text-align:center; margin-bottom:25px }
-.logo { width:50%; max-width:300px; margin:auto; display:block }
-.refresh-btn { margin-top:10px; padding:8px 18px; border:0; border-radius:6px; background:#2d7ff9; color:#fff; cursor:pointer }
-.summary { display:flex; gap:15px; margin:25px 0 }
-.card { flex:1; background:#f2f2f2; padding:18px; border-radius:6px; text-align:center }
-.filters select { padding:6px 10px; margin-right:10px }
-table { width:100%; border-collapse:collapse; margin-top:10px }
-th,td { border-bottom:1px solid #ddd; padding:12px; font-size:14px }
-th { background:#f0f0f0 }
-@media(max-width:600px){ .summary{flex-direction:column} .logo{width:70%} }
-</style>
+  <meta charset="utf-8">
+  <title>Scan2Print – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial; background:#f6f6f6; padding:20px; }
+    .box { background:#fff; max-width:900px; margin:auto; padding:20px; border-radius:10px; }
+    .summary { display:flex; gap:10px; margin:20px 0; }
+    .card { flex:1; background:#eee; padding:15px; border-radius:6px; text-align:center; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
+    .status-active { color: green; font-weight: bold; }
+    .status-pending { color: orange; font-style: italic; }
+  </style>
 </head>
-
 <body>
-<div class="box">
+  <div class="box">
+    <div class="summary">
+      <div class="card"><b id="today">0</b><br>Today</div>
+      <div class="card"><b id="week">0</b><br>Week</div>
+      <div class="card"><b id="month">0</b><br>Month</div>
+    </div>
+    <table>
+      <thead><tr><th>Time</th><th>File</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
 
-<div class="header">
-  <img src="logo.png" class="logo">
-  <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
-</div>
+  <script>
+    let allFiles = [];
+    const shop = new URLSearchParams(location.search).get("shop");
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
 
-<div class="summary">
-  <div class="card"><strong id="today">0</strong><br>Today</div>
-  <div class="card"><strong id="week">0</strong><br>This Week</div>
-  <div class="card"><strong id="month">0</strong><br>This Month</div>
-  <div class="card"><strong id="year">0</strong><br>This Year</div>
-</div>
+    function loadData() {
+      fetch(`${scriptUrl}?shop=${shop}&t=${Date.now()}`)
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById("today").innerText = data.summary.today;
+          document.getElementById("week").innerText = data.summary.week;
+          document.getElementById("month").innerText = data.summary.month;
+          allFiles = data.files;
+          render();
+        });
+    }
 
-<div class="filters">
-  <select id="statusFilter" onchange="renderTable()">
-    <option value="ACTIVE">Active</option>
-    <option value="DELETED">Deleted</option>
-    <option value="ALL">All</option>
-  </select>
+    function render() {
+      const tbody = document.getElementById("rows");
+      tbody.innerHTML = allFiles.map(f => {
+        let action = `<span class="status-pending">Processing...</span>`;
+        if (f.status === "ACTIVE") action = `<a href="${f.fileUrl}" target="_blank">Open</a>`;
+        if (f.status.includes("FAILED")) action = `<span style="color:red">Error</span>`;
+        
+        return `<tr>
+          <td>${new Date(f.timestamp).toLocaleTimeString()}</td>
+          <td>${f.fileName}</td>
+          <td>${action}</td>
+        </tr>`;
+      }).join('');
+    }
 
-  <select id="dateFilter" onchange="renderTable()">
-    <option value="TODAY" selected>Today</option>
-    <option value="WEEK">This Week</option>
-    <option value="MONTH">This Month</option>
-    <option value="ALL">All</option>
-  </select>
-</div>
-
-<table>
-<thead><tr><th>Date</th><th>File</th><th>Open</th></tr></thead>
-<tbody id="rows"></tbody>
-</table>
-
-</div>
-
-<script>
-let allFiles = [];
-const shop = new URLSearchParams(location.search).get("shop");
-if(!shop){ alert("Invalid shop"); throw "Missing shop"; }
-
-function loadDashboardData(){
-  fetch("https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec?shop="+shop)
-  .then(r=>r.json())
-  .then(data=>{
-    today.innerText=data.summary.today;
-    week.innerText=data.summary.week;
-    month.innerText=data.summary.month;
-    year.innerText=data.summary.year;
-    allFiles=data.files;
-    renderTable();
-  });
-}
-
-function renderTable(){
-  const s=statusFilter.value, d=dateFilter.value;
-  rows.innerHTML="";
-  const now=new Date();
-
-  const filtered=allFiles.filter(f=>{
-    if(s!=="ALL" && f.status!==s) return false;
-    if(s==="DELETED") return true;
-
-    const t=new Date(f.timestamp);
-    if(d==="TODAY") return t.toDateString()===now.toDateString();
-    if(d==="WEEK") return (now-t)/(864e5)<7;
-    if(d==="MONTH") return t.getMonth()===now.getMonth() && t.getFullYear()===now.getFullYear();
-    return true;
-  });
-
-  if(!filtered.length){
-    rows.innerHTML="<tr><td colspan=3>No files</td></tr>";
-    return;
-  }
-
-  filtered.forEach(f=>{
-    let open="Open";
-    if(f.status==="DELETED") open="Deleted";
-    else if(f.status==="PENDING") open="Processing…";
-    else if(f.status==="FAILED") open="Error";
-    else open=`<a href="${f.fileUrl}" target="_blank">Open</a>`;
-
-    rows.innerHTML+=`
-      <tr>
-        <td>${new Date(f.timestamp).toLocaleString()}</td>
-        <td>${f.fileName}</td>
-        <td>${open}</td>
-      </tr>`;
-  });
-}
-
-loadDashboardData();
-setInterval(loadDashboardData,3000);
-</script>
-
+    setInterval(loadData, 2000); // Refreshes every 2 seconds
+    loadData();
+  </script>
 </body>
 </html>
