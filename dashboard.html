@@ -103,20 +103,53 @@
         }
 
         async function handle(id, type) {
-            const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${id}`);
-            const url = await res.text();
-            if (type === 'open') window.open(url, '_blank');
-            else { const pf = document.getElementById('printFrame'); pf.src = url; pf.onload = () => pf.contentWindow.print(); }
-        }
+    const btn = event.target;
+    const oldText = btn.innerText;
+    btn.innerText = "⏳";
+    
+    // Get fresh URL from Google
+    const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${id}`);
+    const url = await res.text();
+    
+    if (type === 'open') {
+        // Opens in a new tab instead of downloading
+        window.open(url, '_blank');
+    } else {
+        // Printing logic
+        const pf = document.getElementById('printFrame');
+        pf.src = url;
+        pf.onload = () => {
+            setTimeout(() => {
+                pf.contentWindow.focus();
+                pf.contentWindow.print();
+            }, 500); // Small delay helps browsers prepare the print dialog
+        };
+    }
+    btn.innerText = oldText;
+}
 
-        async function markDone(id) {
-            if(confirm("Complete this order?")) {
-                await fetch(`${CONFIG.url}?action=delete&fileId=${id}`);
-                refresh();
-            }
+async function markDone(id) {
+    if(!confirm("Mark this order as printed/completed?")) return;
+    
+    const btn = event.target;
+    btn.innerText = "⏳";
+    
+    try {
+        const res = await fetch(`${CONFIG.url}?action=delete&fileId=${id}`);
+        const status = await res.text();
+        
+        if(status === "SUCCESS") {
+            refresh(); // Reloads the table to show the row as DELETED
+        } else {
+            alert("Error: Could not update status.");
         }
+    } catch (e) {
+        alert("Connection Error.");
+    }
+}
         refresh();
         setInterval(refresh, 20000);
     </script>
 </body>
 </html>
+
