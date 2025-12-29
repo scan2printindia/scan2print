@@ -2,12 +2,12 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scan2Print – Anonymous Upload</title>
+    <title>Scan2Print – Instant Upload</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .upload-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-        .logo { width: 120px; margin-bottom: 20px; }
+        .logo { width: 140px; margin-bottom: 20px; }
         .drop-zone { border: 2px dashed #2d7ff9; padding: 40px 20px; border-radius: 15px; margin-bottom: 25px; cursor: pointer; background: #f0f7ff; }
         button { background: #2d7ff9; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 18px; width: 100%; cursor: pointer; font-weight: 600; }
         button:disabled { background: #ccc; }
@@ -18,45 +18,40 @@
 </head>
 <body>
     <div class="upload-card">
-        <img src="logo.png" class="logo" alt="Logo">
-        <h2>Print Your Files</h2>
+        <img src="logo.png" class="logo">
+        <h2>Quick Print</h2>
         <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            <span id="fileNameDisplay">Select File (PDF/Image)</span>
+            <span id="fileNameDisplay">Tap to Select PDF or Image</span>
             <input type="file" id="fileInput" hidden onchange="document.getElementById('fileNameDisplay').innerText = this.files[0].name">
         </div>
-        <button onclick="startUpload()" id="btn">Upload & Print</button>
+        <button onclick="startUpload()" id="btn">🚀 Send to Printer</button>
         <div class="progress-container" id="progCont"><div id="progressBar"></div></div>
         <div id="status">Ready</div>
     </div>
-
     <script>
         const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
         const CHAT_ID = "6231880924";
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec"; 
+        const GOOGLE_URL = "PASTE_YOUR_WEB_APP_URL_HERE"; 
 
         async function startUpload() {
             const input = document.getElementById('fileInput');
             const btn = document.getElementById('btn');
             const status = document.getElementById('status');
             const bar = document.getElementById('progressBar');
-            if (!input.files[0]) return alert("Select a file!");
+            if (!input.files[0]) return alert("Please select a file!");
 
             btn.disabled = true;
             document.getElementById('progCont').style.display = "block";
-            status.innerText = "Uploading to Cloud...";
+            status.innerText = "Uploading...";
             bar.style.width = "30%";
 
             try {
                 let formData = new FormData();
                 formData.append("document", input.files[0]);
-                
                 let tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`, { method: "POST", body: formData });
                 let tgData = await tgRes.json();
-                if(!tgData.ok) throw new Error();
-
-                bar.style.width = "70%";
-                status.innerText = "Saving to Dashboard...";
-
+                
+                bar.style.width = "60%";
                 let fileId = tgData.result.document.file_id;
                 let getFile = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
                 let fileInfo = await getFile.json();
@@ -75,10 +70,7 @@
 
                 bar.style.width = "100%";
                 status.innerHTML = "<b style='color:green'>Success! Visit the counter.</b>";
-            } catch (e) {
-                status.innerText = "Error. Try again.";
-                btn.disabled = false;
-            }
+            } catch (e) { status.innerText = "Error. Try again."; btn.disabled = false; }
         }
     </script>
 </body>
