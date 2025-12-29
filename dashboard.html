@@ -102,79 +102,47 @@
             document.getElementById("queue").innerHTML = html || "<tr><td colspan='4' align='center'>No files found.</td></tr>";
         }
 
-     async function handle(id, type) {
-    const btn = event?.target || { innerText: "" };
-    const oldText = btn.innerText;
-    if (btn) btn.innerText = "⏳";
+    async function handle(fileId, type) {
+  const btn = event.target;
+  const old = btn.innerText;
+  btn.innerText = "⏳";
 
-    try {
-        // 1) get the fresh file base64 & mime from Apps Script (server-side proxy)
-        const proxyRes = await fetch(`${CONFIG.url}?action=proxy&fileId=${id}&t=${Date.now()}`);
-        const proxyJson = await proxyRes.json();
-        if (proxyJson.error) { throw new Error(proxyJson.error); }
+  try {
+    const res = await fetch(`${CONFIG.url}?action=proxy&fileId=${fileId}`);
+    const { mime, b64, error } = await res.json();
+    if (error) throw new Error(error);
 
-        const mime = proxyJson.mime || 'application/octet-stream';
-        const b64 = proxyJson.b64;
-        if (!b64) throw new Error("Empty file data");
+    // base64 → blob
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-        // 2) convert base64 -> Blob
-        function b64ToBlob(b64Data, contentType = '', sliceSize = 512) {
-            const byteCharacters = atob(b64Data);
-            const byteArrays = [];
-            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-                const slice = byteCharacters.slice(offset, offset + sliceSize);
-                const byteNumbers = new Array(slice.length);
-                for (let i = 0; i < slice.length; i++) {
-                    byteNumbers[i] = slice.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                byteArrays.push(byteArray);
-            }
-            return new Blob(byteArrays, { type: contentType });
-        }
+    const blob = new Blob([bytes], { type: mime });
+    const blobUrl = URL.createObjectURL(blob);
 
-        const blob = b64ToBlob(b64, mime);
-        const blobUrl = URL.createObjectURL(blob);
-
-        if (type === 'open') {
-            // open in a new tab so browser's built-in viewer or download works
-            window.open(blobUrl, '_blank');
-            // note: we don't immediately revoke blobUrl because the new tab may need it.
-            // Revoke after a short delay
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
-            if (btn) btn.innerText = oldText;
-            return;
-        }
-
-        // type === 'print'
-        const pf = document.getElementById('printFrame');
-        pf.style.display = 'block';
-        pf.src = blobUrl;
-
-        pf.onload = () => {
-            setTimeout(() => {
-                try {
-                    pf.contentWindow.focus();
-                    pf.contentWindow.print();
-                } catch (err) {
-                    console.error('print error', err);
-                    alert('Print failed. Your browser may be blocking the print dialog.');
-                } finally {
-                    // cleanup
-                    URL.revokeObjectURL(blobUrl);
-                    // hide iframe after short delay
-                    setTimeout(() => { pf.style.display = 'none'; pf.src = 'about:blank'; }, 1000);
-                }
-            }, 400);
-        };
-
-    } catch (e) {
-        console.error(e);
-        alert("Print failed. Your browser may be blocking the connection.\n\n" + (e.message || e));
-    } finally {
-        if (btn) btn.innerText = oldText;
+    if (type === "open") {
+      window.open(blobUrl);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      return;
     }
+
+    // PRINT
+    const iframe = document.getElementById("printFrame");
+    iframe.src = blobUrl;
+
+    iframe.onload = () => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    };
+
+  } catch (e) {
+    alert("Print failed: " + e.message);
+  } finally {
+    btn.innerText = old;
+  }
 }
+
 
 async function markDone(id) {
     if(!confirm("Mark this order as printed/completed?")) return;
@@ -200,6 +168,7 @@ async function markDone(id) {
     </script>
 </body>
 </html>
+
 
 
 
