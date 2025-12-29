@@ -119,49 +119,24 @@ function render() {
   queue.innerHTML = html || `<tr><td colspan="4" align="center">No files</td></tr>`;
 }
 
-/* ======================
-   CORE FIXED HANDLER
-   ====================== */
-async function handle(fileId, type) {
-  const btn = event.target;
-  const old = btn.innerText;
-  btn.innerText = "⏳";
+function handle(fileId, type) {
+  const url = `${CONFIG.url}?action=proxy&fileId=${fileId}`;
 
-  try {
-    const res = await fetch(`${CONFIG.url}?action=proxy&fileId=${fileId}`);
-    const { mime, b64, error } = await res.json();
-    if (error) throw new Error(error);
-
-    // SAFE base64 → binary
-    const binary = atob(b64);
-    const len = binary.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-
-    // 🔑 CRITICAL: bytes.buffer (not bytes)
-    const blob = new Blob([bytes.buffer], { type: mime });
-    const blobUrl = URL.createObjectURL(blob);
-
-    if (type === "open") {
-      window.open(blobUrl, "_blank");
-      setTimeout(()=>URL.revokeObjectURL(blobUrl), 30000);
-      return;
-    }
-
-    const iframe = document.getElementById("printFrame");
-    iframe.src = blobUrl;
-    iframe.onload = () => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setTimeout(()=>{ URL.revokeObjectURL(blobUrl); iframe.src="about:blank"; }, 5000);
-    };
-
-  } catch (e) {
-    alert("File error: " + e.message);
-  } finally {
-    btn.innerText = old;
+  if (type === "open") {
+    window.open(url, "_blank");
+    return;
   }
+
+  // PRINT
+  const iframe = document.getElementById("printFrame");
+  iframe.src = url;
+
+  iframe.onload = () => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  };
 }
+
 
 async function markDone(id) {
   if (!confirm("Mark as completed?")) return;
@@ -174,3 +149,4 @@ setInterval(refresh, 20000);
 </script>
 </body>
 </html>
+
