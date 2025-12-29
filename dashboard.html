@@ -1,108 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Scan2Print Admin Dashboard</title>
-    <style>
-        :root { --primary: #2d7ff9; --success: #10b981; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; margin: 0; }
-        .container { max-width: 1100px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .logo { height: 50px; }
-        .filter-bar { margin: 20px 0; display: flex; gap: 10px; justify-content: center; }
-        .filter-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; }
-        .filter-btn.active { background: var(--primary); color: white; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .stat-card h1 { margin: 10px 0; color: var(--primary); }
-        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; border-collapse: collapse; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        th { background: var(--primary); color: white; padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #eee; }
-        .btn { padding: 6px 12px; border-radius: 4px; border:none; cursor:pointer; color: white; font-size: 13px; }
-        .btn-view { background: var(--primary); }
-        .btn-print { background: var(--success); }
-        .btn-done { background: var(--danger); }
-        .deleted { color: #888; text-decoration: line-through; }
-    </style>
+  <meta charset="utf-8">
+  <title>Scan2Print Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root { --primary:#2d7ff9; --success:#10b981; --danger:#ef4444; }
+    body { font-family:Segoe UI, sans-serif; background:#f4f7f6; margin:0; padding:20px; }
+    .container { max-width:1100px; margin:auto; }
+    .header { display:flex; justify-content:space-between; align-items:center; background:#fff;
+              padding:15px 25px; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    .filter-bar { margin:20px 0; display:flex; gap:10px; justify-content:center; }
+    .filter-btn { border:2px solid var(--primary); background:#fff; color:var(--primary);
+                  padding:8px 20px; border-radius:20px; cursor:pointer; font-weight:600; }
+    .filter-btn.active { background:var(--primary); color:#fff; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:20px; }
+    .stat-card { background:#fff; padding:20px; border-radius:10px; text-align:center;
+                 border-top:4px solid var(--primary); box-shadow:0 2px 5px rgba(0,0,0,.05); }
+    table { width:100%; background:#fff; border-radius:10px; overflow:hidden;
+            border-collapse:collapse; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    th { background:var(--primary); color:#fff; padding:14px; text-align:left; }
+    td { padding:14px; border-bottom:1px solid #eee; }
+    .btn { padding:6px 12px; border:none; border-radius:4px; color:#fff; cursor:pointer; }
+    .btn-view { background:var(--primary); }
+    .btn-print { background:var(--success); }
+    .btn-done { background:var(--danger); }
+    .deleted { color:#888; text-decoration:line-through; }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="logo.png" class="logo">
-            <h2 id="shopTitle">Dashboard</h2>
-            <button class="filter-btn" onclick="refresh()">🔄 Sync</button>
-        </div>
+<div class="container">
+  <div class="header">
+    <h2 id="shopTitle">Dashboard</h2>
+    <button class="filter-btn" onclick="refresh()">🔄 Sync</button>
+  </div>
 
-        <div class="filter-bar">
-            <button class="filter-btn active" onclick="setFilter('today', this)">Today</button>
-            <button class="filter-btn" onclick="setFilter('week', this)">7 Days</button>
-            <button class="filter-btn" onclick="setFilter('all', this)">All</button>
-        </div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('today',this)">Today</button>
+    <button class="filter-btn" onclick="setFilter('week',this)">7 Days</button>
+    <button class="filter-btn" onclick="setFilter('all',this)">All</button>
+  </div>
 
-        <div class="grid">
-            <div class="stat-card">Today<h1 id="tStat">0</h1></div>
-            <div class="stat-card">Weekly<h1 id="wStat">0</h1></div>
-            <div class="stat-card">Total<h1 id="totalStat">0</h1></div>
-        </div>
+  <div class="grid">
+    <div class="stat-card">Today<h1 id="tStat">0</h1></div>
+    <div class="stat-card">Weekly<h1 id="wStat">0</h1></div>
+    <div class="stat-card">Total<h1 id="totalStat">0</h1></div>
+  </div>
 
-        <table>
-            <thead><tr><th>Received</th><th>Filename</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="queue"></tbody>
-        </table>
-    </div>
-    <iframe id="printFrame" style="display:none;"></iframe>
+  <table>
+    <thead>
+      <tr><th>Received</th><th>Filename</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="queue"></tbody>
+  </table>
+</div>
 
-    <script>
-        const CONFIG = { url: "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec", shop: new URLSearchParams(window.location.search).get("shop") };
-        let allFiles = []; 
-        let currentFilter = 'today';
+<iframe id="printFrame" style="display:none"></iframe>
 
-        function setFilter(f, btn) {
-            currentFilter = f;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            render();
-        }
+<script>
+/* 🔴 IMPORTANT: PUT YOUR **LATEST DEPLOYED** /exec URL HERE */
+const CONFIG = {
+  url: "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec",
+  shop: new URLSearchParams(location.search).get("shop")
+};
 
-        async function refresh() {
-            if(!CONFIG.shop) return;
-            document.getElementById("shopTitle").innerText = "Shop: " + CONFIG.shop;
-            const res = await fetch(`${CONFIG.url}?shop=${CONFIG.shop}&t=${Date.now()}`);
-            const data = await res.json();
-            allFiles = data.files;
-            document.getElementById("tStat").innerText = data.summary.today;
-            document.getElementById("wStat").innerText = data.summary.week;
-            document.getElementById("totalStat").innerText = data.summary.total;
-            render();
-        }
+let allFiles = [];
+let currentFilter = "today";
 
-        function render() {
-            const now = new Date();
-            let html = "";
-            const filtered = allFiles.filter(f => {
-                const fd = new Date(f.timestamp);
-                if (currentFilter === 'today') return fd.toDateString() === now.toDateString();
-                if (currentFilter === 'week') return (now - fd) < 7*24*60*60*1000;
-                return true;
-            });
-            filtered.forEach(f => {
-                const isD = f.status === "DELETED";
-                html += `<tr>
-                    <td>${new Date(f.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
-                    <td class="${isD ? 'deleted' : ''}">${f.fileName}</td>
-                    <td style="color:${isD?'red':'green'}">${f.status}</td>
-                    <td>
-                        ${isD ? '-' : `
-                            <button class="btn btn-view" onclick="handle('${f.fileId}', 'open')">View</button>
-                            <button class="btn btn-print" onclick="handle('${f.fileId}', 'print')">Print</button>
-                            <button class="btn btn-done" onclick="markDone('${f.fileId}')">Done</button>`}
-                    </td>
-                </tr>`;
-            });
-            document.getElementById("queue").innerHTML = html || "<tr><td colspan='4' align='center'>No files found.</td></tr>";
-        }
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
 
-    async function handle(fileId, type) {
+async function refresh() {
+  if (!CONFIG.shop) return alert("Missing shop parameter");
+  document.getElementById("shopTitle").innerText = "Shop: " + CONFIG.shop;
+
+  const res = await fetch(`${CONFIG.url}?shop=${CONFIG.shop}&t=${Date.now()}`);
+  const data = await res.json();
+
+  allFiles = data.files;
+  tStat.innerText = data.summary.today;
+  wStat.innerText = data.summary.week;
+  totalStat.innerText = data.summary.total;
+
+  render();
+}
+
+function render() {
+  const now = new Date();
+  let html = "";
+
+  const filtered = allFiles.filter(f => {
+    const d = new Date(f.timestamp);
+    if (currentFilter === "today") return d.toDateString() === now.toDateString();
+    if (currentFilter === "week") return (now - d) < 7*86400000;
+    return true;
+  });
+
+  filtered.forEach(f => {
+    const del = f.status === "DELETED";
+    html += `<tr>
+      <td>${new Date(f.timestamp).toLocaleString()}</td>
+      <td class="${del?'deleted':''}">${f.fileName}</td>
+      <td style="color:${del?'red':'green'}">${f.status}</td>
+      <td>${del ? "-" : `
+        <button class="btn btn-view" onclick="handle('${f.fileId}','open')">View</button>
+        <button class="btn btn-print" onclick="handle('${f.fileId}','print')">Print</button>
+        <button class="btn btn-done" onclick="markDone('${f.fileId}')">Done</button>`}
+      </td>
+    </tr>`;
+  });
+
+  queue.innerHTML = html || `<tr><td colspan="4" align="center">No files</td></tr>`;
+}
+
+/* ======================
+   CORE FIXED HANDLER
+   ====================== */
+async function handle(fileId, type) {
   const btn = event.target;
   const old = btn.innerText;
   btn.innerText = "⏳";
@@ -112,65 +132,45 @@
     const { mime, b64, error } = await res.json();
     if (error) throw new Error(error);
 
-    // base64 → blob
+    // SAFE base64 → binary
     const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
 
-    const blob = new Blob([bytes], { type: mime });
+    // 🔑 CRITICAL: bytes.buffer (not bytes)
+    const blob = new Blob([bytes.buffer], { type: mime });
     const blobUrl = URL.createObjectURL(blob);
 
     if (type === "open") {
-      window.open(blobUrl);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      window.open(blobUrl, "_blank");
+      setTimeout(()=>URL.revokeObjectURL(blobUrl), 30000);
       return;
     }
 
-    // PRINT
     const iframe = document.getElementById("printFrame");
     iframe.src = blobUrl;
-
     iframe.onload = () => {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      setTimeout(()=>{ URL.revokeObjectURL(blobUrl); iframe.src="about:blank"; }, 5000);
     };
 
   } catch (e) {
-    alert("Print failed: " + e.message);
+    alert("File error: " + e.message);
   } finally {
     btn.innerText = old;
   }
 }
 
-
 async function markDone(id) {
-    if(!confirm("Mark this order as printed/completed?")) return;
-    
-    const btn = event.target;
-    btn.innerText = "⏳";
-    
-    try {
-        const res = await fetch(`${CONFIG.url}?action=delete&fileId=${id}`);
-        const status = await res.text();
-        
-        if(status === "SUCCESS") {
-            refresh(); // Reloads the table to show the row as DELETED
-        } else {
-            alert("Error: Could not update status.");
-        }
-    } catch (e) {
-        alert("Connection Error.");
-    }
+  if (!confirm("Mark as completed?")) return;
+  await fetch(`${CONFIG.url}?action=delete&fileId=${id}`);
+  refresh();
 }
-        refresh();
-        setInterval(refresh, 20000);
-    </script>
+
+refresh();
+setInterval(refresh, 20000);
+</script>
 </body>
 </html>
-
-
-
-
-
-
