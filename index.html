@@ -2,84 +2,103 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scan2Print – Instant Upload</title>
+    <title>Scan2Print – Uploader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .upload-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-        .logo { width: 140px; margin-bottom: 20px; }
         .drop-zone { border: 2px dashed #2d7ff9; padding: 40px 20px; border-radius: 15px; margin-bottom: 25px; cursor: pointer; background: #f0f7ff; }
         button { background: #2d7ff9; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 18px; width: 100%; cursor: pointer; font-weight: 600; }
-        button:disabled { background: #ccc; }
-        #status { margin-top: 20px; color: #666; font-size: 14px; }
-        .progress-container { width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-top: 15px; display: none; }
-        #progressBar { height: 100%; background: #2d7ff9; width: 0%; border-radius: 4px; transition: width 0.3s; }
+        #status { margin-top: 20px; font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
     <div class="upload-card">
-        <img src="logo.png" class="logo">
         <h2>Quick Print</h2>
         <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            <span id="fileNameDisplay">Tap to Select File</span>
+            <span id="fileNameDisplay">Select File</span>
             <input type="file" id="fileInput" hidden onchange="document.getElementById('fileNameDisplay').innerText = this.files[0].name">
         </div>
-        <button onclick="startUpload()" id="btn">🚀 Send to Printer</button>
-        <div class="progress-container" id="progCont"><div id="progressBar"></div></div>
+        <button onclick="startUpload()" id="btn">🚀 Upload</button>
         <div id="status">Ready</div>
     </div>
     <script>
         const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
         const CHAT_ID = "6231880924";
-        const GOOGLE_URL = "AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ"; 
+        const GOOGLE_URL = "YOUR_APPS_SCRIPT_URL"; 
 
         async function startUpload() {
             const input = document.getElementById('fileInput');
             const btn = document.getElementById('btn');
             const status = document.getElementById('status');
-            const bar = document.getElementById('progressBar');
-            if (!input.files[0]) return alert("Please select a file!");
+            if (!input.files[0]) return alert("Select a file!");
 
             btn.disabled = true;
-            document.getElementById('progCont').style.display = "block";
-            status.innerText = "Uploading...";
-            bar.style.width = "40%";
+            status.innerText = "Step 1/2: Sending to Telegram...";
 
             try {
                 let formData = new FormData();
                 formData.append("document", input.files[0]);
                 
-                // 1. Send to Telegram
                 let tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`, { method: "POST", body: formData });
                 let tgData = await tgRes.json();
+                
                 if(!tgData.ok) throw new Error("Telegram failed");
+                
+                status.innerText = "Step 2/2: Logging to Sheet...";
+                let fileId = tgData.result.document.file_id;
 
-                bar.style.width = "70%";
-                status.innerText = "Processing ID...";
-
-                // 2. Extract File ID
-                let fileId = tgData.result.document ? tgData.result.document.file_id : tgData.result.photo[tgData.result.photo.length - 1].file_id;
-
-                // 3. Send Metadata to Google Sheet
+                // CRITICAL: use 'no-cors' to prevent browser blocking
                 await fetch(GOOGLE_URL, {
                     method: "POST",
-                    mode: "no-cors",
+                    mode: "no-cors", 
+                    headers: { "Content-Type": "text/plain" },
                     body: JSON.stringify({
                         shop: new URLSearchParams(window.location.search).get("shop") || "General",
                         fileName: input.files[0].name,
-                        fileUrl: "Temp-Link", 
+                        fileUrl: "https://api.telegram.org/file/bot"+BOT_TOKEN+"/"+fileId,
                         fileId: fileId
                     })
                 });
 
-                bar.style.width = "100%";
-                status.innerHTML = "<b style='color:green'>Success! Visit the counter.</b>";
-            } catch (e) { 
-                console.error(e);
-                status.innerText = "Error. Please try again."; 
-                btn.disabled = false; 
+                status.innerHTML = "<b style='color:green'>Success! File logged.</b>";
+                input.value = "";
+            } catch (e) {
+                status.innerText = "Error: " + e.message;
+            } finally {
+                btn.disabled = false;
             }
         }
     </script>
-</body>
+
+    <div style="padding: 20px; border: 2px dashed orange; margin: 20px auto; max-width: 400px; text-align: center; background: #fff; border-radius: 10px;">
+        <h3 style="color: orange; margin-top: 0;">Connection Debugger</h3>
+        <button onclick="testSheetConnection()" style="background: orange; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold;">Test Sheet Log</button>
+        <p id="testStatus" style="font-size: 13px; margin-top: 10px; color: #666;">Status: Waiting for click...</p>
+    </div>
+
+    <script>
+    async function testSheetConnection() {
+        const status = document.getElementById('testStatus');
+        const GOOGLE_URL = "YOUR_APPS_SCRIPT_URL"; // MAKE SURE THIS IS UPDATED
+        status.innerText = "Connecting to Google...";
+        
+        try {
+            await fetch(GOOGLE_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({
+                    shop: "DEBUG-TEST",
+                    fileName: "test-file.txt",
+                    fileUrl: "http://test.com",
+                    fileId: "TEST-ID-123"
+                })
+            });
+            status.innerHTML = "<b style='color:green'>Data Sent! Check your Google Sheet now.</b>";
+        } catch (e) {
+            status.innerText = "Error: " + e.message;
+        }
+    }
+    </script>
+    </body>
 </html>
