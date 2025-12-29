@@ -2,17 +2,18 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Admin Dashboard</title>
+    <title>Scan2Print Dashboard</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f8f9fa; }
         .header { display: flex; justify-content: space-between; align-items: center; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
-        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; border-top: 4px solid #2d7ff9; }
         .stat-card h1 { margin: 10px 0; color: #2d7ff9; }
-        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; border-collapse: collapse; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; border-collapse: collapse; }
         th { background: #2d7ff9; color: white; padding: 15px; text-align: left; }
         td { padding: 15px; border-bottom: 1px solid #eee; }
-        .active-btn { background: #2d7ff9; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 13px; }
+        .active-btn { background: #2d7ff9; color: white; padding: 6px 12px; border-radius: 4px; border:none; cursor:pointer; }
+        .print-btn { background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border:none; cursor:pointer; margin-left: 5px; }
         .deleted { color: #888; text-decoration: line-through; }
     </style>
 </head>
@@ -21,19 +22,16 @@
         <h2 id="shopTitle">Shop Queue</h2>
         <button onclick="refresh()">Refresh Now</button>
     </div>
-
     <div class="grid">
         <div class="stat-card">Today<h1 id="tStat">0</h1></div>
-        <div class="stat-card">This Week<h1 id="wStat">0</h1></div>
-        <div class="stat-card">This Month<h1 id="mStat">0</h1></div>
+        <div class="stat-card">7 Days<h1 id="wStat">0</h1></div>
+        <div class="stat-card">30 Days<h1 id="mStat">0</h1></div>
     </div>
-
     <table>
-        <thead>
-            <tr><th>Time</th><th>Filename</th><th>Status</th><th>Action</th></tr>
-        </thead>
+        <thead><tr><th>Time</th><th>Filename</th><th>Status</th><th>Action</th></tr></thead>
         <tbody id="queue"></tbody>
     </table>
+    <iframe id="printFrame" style="display:none;"></iframe>
 
     <script>
         const CONFIG = {
@@ -42,33 +40,48 @@
         };
 
         async function refresh() {
-            if(!CONFIG.shop) return alert("No shop specified in URL!");
+            if(!CONFIG.shop) return;
             document.getElementById("shopTitle").innerText = "Dashboard: " + CONFIG.shop;
-
-            const res = await fetch(`${CONFIG.url}?shop=${CONFIG.shop}`);
+            const res = await fetch(`${CONFIG.url}?shop=${CONFIG.shop}&t=${Date.now()}`);
             const data = await res.json();
-
             document.getElementById("tStat").innerText = data.summary.today;
             document.getElementById("wStat").innerText = data.summary.week;
             document.getElementById("mStat").innerText = data.summary.month;
 
             let html = "";
             data.files.forEach(f => {
-                const time = new Date(f.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                 const isDeleted = f.status === "DELETED";
                 html += `<tr>
-                    <td>${time}</td>
+                    <td>${new Date(f.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
                     <td class="${isDeleted ? 'deleted' : ''}">${f.fileName}</td>
                     <td>${f.status}</td>
-                    <td>${isDeleted ? '-' : `<a href="${f.fileUrl}" class="active-btn" target="_blank">Open File</a>`}</td>
+                    <td>${isDeleted ? '-' : `
+                        <button class="active-btn" onclick="handleFile('${f.fileId}', 'open')">Open</button>
+                        <button class="print-btn" onclick="handleFile('${f.fileId}', 'print')">Print</button>`}
+                    </td>
                 </tr>`;
             });
-            document.getElementById("queue").innerHTML = html || "<tr><td colspan='4'>No files found</td></tr>";
+            document.getElementById("queue").innerHTML = html || "<tr><td colspan='4'>No files</td></tr>";
         }
 
-        setInterval(refresh, 5000); // Auto-refresh every 5 seconds
+        async function handleFile(fileId, type) {
+            const btn = event.target;
+            btn.innerText = "⏳...";
+            const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${fileId}`);
+            const url = await res.text();
+            
+            if (type === 'open') {
+                window.open(url, '_blank');
+            } else {
+                const pFrame = document.getElementById('printFrame');
+                pFrame.src = url;
+                pFrame.onload = () => { pFrame.contentWindow.print(); };
+            }
+            btn.innerText = type === 'open' ? 'Open' : 'Print';
+        }
+
+        setInterval(refresh, 10000);
         refresh();
     </script>
 </body>
 </html>
-
