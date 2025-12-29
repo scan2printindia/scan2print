@@ -108,36 +108,42 @@
     btn.innerText = "⏳";
     
     try {
-        // 1. Get the Fresh Link from your Apps Script
+        // 1. Get the Fresh Link from Apps Script
         const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${id}`);
         const rawUrl = await res.text();
 
-        if (rawUrl === "ERROR") {
-            alert("Could not refresh link. Try again.");
+        if (rawUrl === "ERROR" || !rawUrl.startsWith('http')) {
+            alert("Could not get file link.");
             return;
         }
 
-        // 2. Wrap the URL in Google's Viewer to bypass the "Force Download" header
-        const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
-        
         if (type === 'open') {
-            // Opens the file in a Google Viewer tab (No Download)
-            window.open(googleViewerUrl, '_blank');
-        } else {
-            // Printing logic: We load the Google Viewer into the hidden iframe
-            const pf = document.getElementById('printFrame');
-            pf.src = googleViewerUrl; 
-            
-            pf.onload = () => {
-                setTimeout(() => {
-                    // This attempts to print the contents of the Viewer
-                    pf.contentWindow.focus();
-                    pf.contentWindow.print();
-                }, 1500); // Higher delay for Google Viewer to load
-            };
+            window.open(rawUrl, '_blank');
+            btn.innerText = oldText;
+            return;
         }
+
+        // 2. PRINTING FIX: Fetch the file as a BLOB
+        // This stops the "Force Download" header from working
+        const response = await fetch(rawUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const pf = document.getElementById('printFrame');
+        pf.src = blobUrl; 
+        
+        pf.onload = () => {
+            setTimeout(() => {
+                pf.contentWindow.focus();
+                pf.contentWindow.print();
+                // Clean up memory
+                URL.revokeObjectURL(blobUrl);
+            }, 500);
+        };
+
     } catch (e) {
-        alert("Connection Error.");
+        console.error(e);
+        alert("Print failed. Your browser may be blocking the connection.");
     } finally {
         btn.innerText = oldText;
     }
@@ -166,6 +172,7 @@ async function markDone(id) {
     </script>
 </body>
 </html>
+
 
 
 
