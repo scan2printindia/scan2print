@@ -102,32 +102,43 @@
             document.getElementById("queue").innerHTML = html || "<tr><td colspan='4' align='center'>No files found.</td></tr>";
         }
 
-        async function handle(id, type) {
+      async function handle(id, type) {
     const btn = event.target;
     const oldText = btn.innerText;
     btn.innerText = "⏳";
     
-    // Get fresh URL from Google
-    const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${id}`);
-    const url = await res.text();
-    
-    if (type === 'open') {
-        // Opens in a new tab instead of downloading
-        window.open(url, '_blank');
-    } else {
-        // Printing logic
-        const pf = document.getElementById('printFrame');
-        pf.src = url;
-        pf.onload = () => {
-            setTimeout(() => {
-                pf.contentWindow.focus();
-                pf.contentWindow.print();
-            }, 500); // Small delay helps browsers prepare the print dialog
-        };
+    try {
+        // 1. Get the Fresh URL from your Apps Script
+        const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${id}`);
+        const rawUrl = await res.text();
+        
+        // 2. Wrap the URL in Google Docs Viewer to prevent direct download
+        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
+        
+        if (type === 'open') {
+            // Opens the viewer in a new tab
+            window.open(viewerUrl, '_blank');
+        } else {
+            // Printing logic
+            const pf = document.getElementById('printFrame');
+            
+            // For printing, we try the raw URL first inside the iframe
+            // If it still downloads, we use the viewerUrl
+            pf.src = rawUrl; 
+            
+            pf.onload = () => {
+                setTimeout(() => {
+                    pf.contentWindow.focus();
+                    pf.contentWindow.print();
+                }, 1000); 
+            };
+        }
+    } catch (e) {
+        alert("Error fetching file link.");
+    } finally {
+        btn.innerText = oldText;
     }
-    btn.innerText = oldText;
 }
-
 async function markDone(id) {
     if(!confirm("Mark this order as printed/completed?")) return;
     
@@ -152,4 +163,5 @@ async function markDone(id) {
     </script>
 </body>
 </html>
+
 
