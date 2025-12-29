@@ -5,12 +5,11 @@
     <title>Scan2Print – Anonymous Upload</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .upload-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
         .logo { width: 120px; margin-bottom: 20px; }
-        .drop-zone { border: 2px dashed #2d7ff9; padding: 40px 20px; border-radius: 15px; margin-bottom: 25px; cursor: pointer; background: #f0f7ff; transition: 0.3s; }
-        .drop-zone:hover { background: #e1efff; }
-        button { background: #2d7ff9; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; width: 100%; cursor: pointer; font-weight: 600; }
+        .drop-zone { border: 2px dashed #2d7ff9; padding: 40px 20px; border-radius: 15px; margin-bottom: 25px; cursor: pointer; background: #f0f7ff; }
+        button { background: #2d7ff9; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 18px; width: 100%; cursor: pointer; font-weight: 600; }
         button:disabled { background: #ccc; }
         #status { margin-top: 20px; color: #666; font-size: 14px; }
         .progress-container { width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-top: 15px; display: none; }
@@ -21,17 +20,13 @@
     <div class="upload-card">
         <img src="logo.png" class="logo" alt="Logo">
         <h2>Print Your Files</h2>
-        <p>No login required. Private & Secure.</p>
-
         <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            <span id="fileNameDisplay">Select a PDF or Image</span>
-            <input type="file" id="fileInput" hidden onchange="updateLabel()">
+            <span id="fileNameDisplay">Select File (PDF/Image)</span>
+            <input type="file" id="fileInput" hidden onchange="document.getElementById('fileNameDisplay').innerText = this.files[0].name">
         </div>
-
         <button onclick="startUpload()" id="btn">Upload & Print</button>
-        
         <div class="progress-container" id="progCont"><div id="progressBar"></div></div>
-        <div id="status">Ready to upload</div>
+        <div id="status">Ready</div>
     </div>
 
     <script>
@@ -39,69 +34,52 @@
         const CHAT_ID = "6231880924";
         const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec"; 
 
-        function updateLabel() {
-            const file = document.getElementById('fileInput').files[0];
-            if(file) document.getElementById('fileNameDisplay').innerText = file.name;
-        }
-
         async function startUpload() {
             const input = document.getElementById('fileInput');
             const btn = document.getElementById('btn');
             const status = document.getElementById('status');
             const bar = document.getElementById('progressBar');
-            const progCont = document.getElementById('progCont');
-            const shop = new URLSearchParams(window.location.search).get("shop") || "General";
-
-            if (!input.files[0]) return alert("Select a file first!");
-            if (input.files[0].size > 50 * 1024 * 1024) return alert("File too big (Max 50MB)");
+            if (!input.files[0]) return alert("Select a file!");
 
             btn.disabled = true;
-            progCont.style.display = "block";
-            status.innerText = "Connecting to Telegram...";
-            bar.style.width = "20%";
+            document.getElementById('progCont').style.display = "block";
+            status.innerText = "Uploading to Cloud...";
+            bar.style.width = "30%";
 
             try {
-                // 1. Upload to Telegram
                 let formData = new FormData();
                 formData.append("document", input.files[0]);
                 
-                let tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`, {
-                    method: "POST",
-                    body: formData
-                });
+                let tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`, { method: "POST", body: formData });
                 let tgData = await tgRes.json();
-                if(!tgData.ok) throw new Error("Telegram error");
+                if(!tgData.ok) throw new Error();
 
-                bar.style.width = "60%";
-                status.innerText = "Generating link...";
+                bar.style.width = "70%";
+                status.innerText = "Saving to Dashboard...";
 
-                // 2. Get the permanent link
                 let fileId = tgData.result.document.file_id;
                 let getFile = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
                 let fileInfo = await getFile.json();
                 let directLink = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.result.file_path}`;
 
-                // 3. Notify Google Sheet
-                bar.style.width = "90%";
-                status.innerText = "Finalizing...";
                 await fetch(GOOGLE_URL, {
                     method: "POST",
                     mode: "no-cors",
                     body: JSON.stringify({
-                        shop: shop,
+                        shop: new URLSearchParams(window.location.search).get("shop") || "General",
                         fileName: input.files[0].name,
-                        fileUrl: directLink
+                        fileUrl: directLink,
+                        fileId: fileId
                     })
                 });
 
                 bar.style.width = "100%";
                 status.innerHTML = "<b style='color:green'>Success! Visit the counter.</b>";
             } catch (e) {
-                status.innerText = "Error. Please try again.";
+                status.innerText = "Error. Try again.";
                 btn.disabled = false;
             }
         }
     </script>
 </body>
 </html>
-
