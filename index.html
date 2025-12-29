@@ -21,7 +21,7 @@
         <img src="logo.png" class="logo">
         <h2>Quick Print</h2>
         <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            <span id="fileNameDisplay">Tap to Select PDF or Image</span>
+            <span id="fileNameDisplay">Tap to Select File</span>
             <input type="file" id="fileInput" hidden onchange="document.getElementById('fileNameDisplay').innerText = this.files[0].name">
         </div>
         <button onclick="startUpload()" id="btn">🚀 Send to Printer</button>
@@ -31,7 +31,7 @@
     <script>
         const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
         const CHAT_ID = "6231880924";
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec"; 
+        const GOOGLE_URL = "AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ"; 
 
         async function startUpload() {
             const input = document.getElementById('fileInput');
@@ -43,36 +43,43 @@
             btn.disabled = true;
             document.getElementById('progCont').style.display = "block";
             status.innerText = "Uploading...";
-            bar.style.width = "30%";
+            bar.style.width = "40%";
 
             try {
                 let formData = new FormData();
                 formData.append("document", input.files[0]);
+                
+                // 1. Send to Telegram
                 let tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`, { method: "POST", body: formData });
                 let tgData = await tgRes.json();
-                
-                bar.style.width = "60%";
-                let fileId = tgData.result.document.file_id;
-                let getFile = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
-                let fileInfo = await getFile.json();
-                let directLink = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.result.file_path}`;
+                if(!tgData.ok) throw new Error("Telegram failed");
 
+                bar.style.width = "70%";
+                status.innerText = "Processing ID...";
+
+                // 2. Extract File ID
+                let fileId = tgData.result.document ? tgData.result.document.file_id : tgData.result.photo[tgData.result.photo.length - 1].file_id;
+
+                // 3. Send Metadata to Google Sheet
                 await fetch(GOOGLE_URL, {
                     method: "POST",
                     mode: "no-cors",
                     body: JSON.stringify({
                         shop: new URLSearchParams(window.location.search).get("shop") || "General",
                         fileName: input.files[0].name,
-                        fileUrl: directLink,
+                        fileUrl: "Temp-Link", 
                         fileId: fileId
                     })
                 });
 
                 bar.style.width = "100%";
                 status.innerHTML = "<b style='color:green'>Success! Visit the counter.</b>";
-            } catch (e) { status.innerText = "Error. Try again."; btn.disabled = false; }
+            } catch (e) { 
+                console.error(e);
+                status.innerText = "Error. Please try again."; 
+                btn.disabled = false; 
+            }
         }
     </script>
 </body>
 </html>
-
