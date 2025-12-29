@@ -108,33 +108,36 @@
     btn.innerText = "⏳";
     
     try {
-        // 1. Get the Fresh URL from your Apps Script
+        // 1. Get the Fresh Link from your Apps Script
         const res = await fetch(`${CONFIG.url}?action=refresh&fileId=${id}`);
         const rawUrl = await res.text();
-        
-        // 2. Wrap the URL in Google Docs Viewer to prevent direct download
-        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
+
+        if (rawUrl === "ERROR") {
+            alert("Could not refresh link. Try again.");
+            return;
+        }
+
+        // 2. Wrap the URL in Google's Viewer to bypass the "Force Download" header
+        const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
         
         if (type === 'open') {
-            // Opens the viewer in a new tab
-            window.open(viewerUrl, '_blank');
+            // Opens the file in a Google Viewer tab (No Download)
+            window.open(googleViewerUrl, '_blank');
         } else {
-            // Printing logic
+            // Printing logic: We load the Google Viewer into the hidden iframe
             const pf = document.getElementById('printFrame');
-            
-            // For printing, we try the raw URL first inside the iframe
-            // If it still downloads, we use the viewerUrl
-            pf.src = rawUrl; 
+            pf.src = googleViewerUrl; 
             
             pf.onload = () => {
                 setTimeout(() => {
+                    // This attempts to print the contents of the Viewer
                     pf.contentWindow.focus();
                     pf.contentWindow.print();
-                }, 1000); 
+                }, 1500); // Higher delay for Google Viewer to load
             };
         }
     } catch (e) {
-        alert("Error fetching file link.");
+        alert("Connection Error.");
     } finally {
         btn.innerText = oldText;
     }
@@ -163,5 +166,6 @@ async function markDone(id) {
     </script>
 </body>
 </html>
+
 
 
