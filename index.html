@@ -1,78 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Scan2Print – Uploader</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .upload-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-        .drop-zone { border: 2px dashed #2d7ff9; padding: 40px 20px; border-radius: 15px; margin-bottom: 25px; cursor: pointer; background: #f0f7ff; }
-        button { background: #2d7ff9; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 18px; width: 100%; cursor: pointer; font-weight: 600; }
-        #status { margin-top: 20px; font-size: 14px; color: #666; }
-    </style>
+<meta charset="utf-8">
+<title>Scan2Print Upload</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  font-family: Arial;
+  background:#f4f7f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card {
+  background:#fff;
+  padding:30px;
+  border-radius:12px;
+  width:90%;
+  max-width:400px;
+  text-align:center;
+}
+button {
+  background:#2d7ff9;
+  color:#fff;
+  border:none;
+  padding:12px;
+  width:100%;
+  font-size:16px;
+  border-radius:8px;
+  cursor:pointer;
+}
+#status { margin-top:15px; font-size:14px; }
+</style>
 </head>
 <body>
-    <div class="upload-card">
-        <h2>Quick Print</h2>
-        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            <span id="fileNameDisplay">Select File</span>
-            <input type="file" id="fileInput" hidden onchange="document.getElementById('fileNameDisplay').innerText = this.files[0].name">
-        </div>
-        <button onclick="startUpload()" id="btn">🚀 Upload</button>
-        <div id="status">Ready</div>
-    </div>
-    <script>
-        const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
-        const CHAT_ID = "6231880924";
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec"; 
 
-        async function startUpload() {
-            const input = document.getElementById('fileInput');
-            const btn = document.getElementById('btn');
-            const status = document.getElementById('status');
-            if (!input.files[0]) return alert("Select a file!");
+<div class="card">
+  <h2>Upload for Printing</h2>
+  <input type="file" id="file"><br><br>
+  <button onclick="upload()">Upload</button>
+  <div id="status"></div>
+</div>
 
-            btn.disabled = true;
-            status.innerText = "Step 1/2: Sending to Telegram...";
+<script>
+const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
+const CHAT_ID = "6231880924";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
 
-            try {
-                let formData = new FormData();
-                formData.append("document", input.files[0]);
-                
-                let tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`, { method: "POST", body: formData });
-                let tgData = await tgRes.json();
-                
-                if(!tgData.ok) throw new Error("Telegram failed");
-                
-                status.innerText = "Step 2/2: Logging to Sheet...";
-                let fileId = tgData.result.document.file_id;
+async function upload() {
+  const fileInput = document.getElementById("file");
+  const status = document.getElementById("status");
 
-                // CRITICAL: use 'no-cors' to prevent browser blocking
-                await fetch(GOOGLE_URL, {
-                    method: "POST",
-                    mode: "no-cors", 
-                    headers: { "Content-Type": "text/plain" },
-                    body: JSON.stringify({
-                        shop: new URLSearchParams(window.location.search).get("shop") || "General",
-                        fileName: input.files[0].name,
-                        fileUrl: "https://api.telegram.org/file/bot"+BOT_TOKEN+"/"+fileId,
-                        fileId: fileId
-                    })
-                });
+  if (!fileInput.files[0]) {
+    alert("Select a file");
+    return;
+  }
 
-                status.innerHTML = "<b style='color:green'>Success! File logged.</b>";
-                input.value = "";
-            } catch (e) {
-                status.innerText = "Error: " + e.message;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-    </script>
-    
-    </body>
+  status.innerText = "Uploading to Telegram...";
+
+  const formData = new FormData();
+  formData.append("document", fileInput.files[0]);
+
+  const tgRes = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`,
+    { method: "POST", body: formData }
+  );
+  const tgData = await tgRes.json();
+
+  if (!tgData.ok) {
+    status.innerText = "Telegram upload failed";
+    return;
+  }
+
+  status.innerText = "Saving order...";
+
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({
+      shop: new URLSearchParams(location.search).get("shop") || "General",
+      fileName: fileInput.files[0].name,
+      fileId: tgData.result.document.file_id
+    })
+  });
+
+  status.innerText = "Uploaded successfully ✅";
+  fileInput.value = "";
+}
+</script>
+
+</body>
 </html>
-
-
-
