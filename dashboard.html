@@ -31,7 +31,6 @@ button { padding:6px 12px; cursor:pointer; }
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
-const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
 const shop = new URLSearchParams(location.search).get("shop");
 
 document.getElementById("title").innerText = "Shop: " + shop;
@@ -50,7 +49,7 @@ async function load() {
         <td>${f.status}</td>
         <td>
           ${isDone ? "-" : `
-            <button onclick="download('${f.fileId}')">Download</button>
+            <button onclick="download('${f.fileUrl}')">Download</button>
             <button onclick="done('${f.fileId}')">Done</button>
           `}
         </td>
@@ -61,8 +60,9 @@ async function load() {
   document.getElementById("list").innerHTML = html;
 }
 
-function download(fileId) {
-  window.open(`https://api.telegram.org/file/bot${BOT_TOKEN}/${fileId}`, "_blank");
+function download(fileUrl) {
+  // Direct Telegram download (exactly like your old working version)
+  window.open(fileUrl, "_blank");
 }
 
 async function done(fileId) {
