@@ -5,39 +5,65 @@
 <title>Scan2Print Upload</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body {
-  font-family: Arial;
-  background:#f4f7f6;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-.card {
-  background:#fff;
-  padding:30px;
-  border-radius:12px;
-  width:90%;
-  max-width:400px;
-  text-align:center;
-}
-button {
-  background:#2d7ff9;
-  color:#fff;
-  border:none;
-  padding:12px;
-  width:100%;
-  font-size:16px;
-  border-radius:8px;
-  cursor:pointer;
-}
-#status { margin-top:15px; font-size:14px; }
+  body {
+    font-family: Arial;
+    background:#f4f7f6;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    margin:0;
+  }
+  .card {
+    background:#fff;
+    padding:26px;
+    border-radius:14px;
+    width:92%;
+    max-width:420px;
+    text-align:center;
+    border:1px solid #e6ecef;
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .logo{
+    width:60px;
+    height:auto;
+    object-fit:contain;
+  }
+  .brandName{
+    font-weight:800;
+    font-size:18px;
+  }
+  .brandSub{
+    font-size:12px;
+    color:#607d8b;
+  }
+  button {
+    background:#2d7ff9;
+    color:#fff;
+    border:none;
+    padding:12px;
+    width:100%;
+    font-size:16px;
+    border-radius:10px;
+    cursor:pointer;
+  }
 </style>
 </head>
-<body>
 
+<body>
 <div class="card">
-  <h2>Upload for Printing</h2>
+  <div class="brand">
+    <img src="logo.png" class="logo" alt="Scan2Print">
+    <div class="brandName">Scan2Print</div>
+    <div class="brandSub">Upload documents for printing</div>
+  </div>
+
   <input type="file" id="file"><br><br>
   <button onclick="upload()">Upload</button>
   <div id="status"></div>
@@ -50,14 +76,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoN
 
 async function upload() {
   const fileInput = document.getElementById("file");
-  const status = document.getElementById("status");
-
-  if (!fileInput.files[0]) {
-    alert("Select a file");
-    return;
-  }
-
-  status.innerText = "Uploading to Telegram...";
+  if (!fileInput.files[0]) return alert("Select a file");
 
   const formData = new FormData();
   formData.append("document", fileInput.files[0]);
@@ -67,13 +86,6 @@ async function upload() {
     { method: "POST", body: formData }
   );
   const tgData = await tgRes.json();
-
-  if (!tgData.ok) {
-    status.innerText = "Telegram upload failed";
-    return;
-  }
-
-  status.innerText = "Saving order...";
 
   await fetch(SCRIPT_URL, {
     method: "POST",
@@ -85,10 +97,9 @@ async function upload() {
     })
   });
 
-  status.innerText = "Uploaded successfully ✅";
+  alert("Uploaded successfully");
   fileInput.value = "";
 }
 </script>
-
 </body>
 </html>
