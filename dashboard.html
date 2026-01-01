@@ -16,8 +16,8 @@ body{
 .header{
   display:flex;
   justify-content:space-between;
-  flex-wrap:wrap;
   align-items:center;
+  flex-wrap:wrap;
   margin-bottom:22px;
 }
 
@@ -29,6 +29,27 @@ body{
 
 .logo{
   width:88px;
+}
+
+.filters{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+select,button{
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  background:#fff;
+  font-size:14px;
+}
+
+button{
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  cursor:pointer;
 }
 
 .sectionTitle{
@@ -66,19 +87,7 @@ body{
 
 .fileActions{
   display:flex;
-  align-items:center;
-  gap:18px; /* SAFETY GAP */
-}
-
-/* BUTTONS */
-button{
-  padding:10px 14px;
-  border-radius:10px;
-  border:none;
-  background:#2563eb;
-  color:#fff;
-  font-size:14px;
-  cursor:pointer;
+  gap:20px; /* safety gap */
 }
 
 .doneBtn{
@@ -112,7 +121,7 @@ button{
   font-weight:800;
 }
 
-/* HISTORY */
+/* RECENT FILES */
 .tableWrap{
   background:#fff;
   border-radius:18px;
@@ -128,7 +137,10 @@ th,td{
   padding:14px;
   border-bottom:1px solid #eee;
   font-size:14px;
-  opacity:.7;
+}
+
+.deletedRow{
+  opacity:0.5;
 }
 
 @media(max-width:800px){
@@ -153,13 +165,26 @@ th,td{
       <div>Live document intake</div>
     </div>
   </div>
-  <button onclick="load()">Refresh</button>
+
+  <div class="filters">
+    <select id="period">
+      <option value="today">Today</option>
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+    </select>
+
+    <select id="status">
+      <option value="ALL">All</option>
+      <option value="ACTIVE">Active</option>
+      <option value="DELETED">Deleted</option>
+    </select>
+
+    <button onclick="load()">Refresh</button>
+  </div>
 </div>
 
 <div class="sectionTitle">Current Documents</div>
-<div class="currentWrap" id="currentWrap">
-  Waiting for upload…
-</div>
+<div class="currentWrap" id="currentWrap">Waiting for upload…</div>
 
 <div class="stats">
   <div class="stat">
@@ -180,7 +205,11 @@ th,td{
 <div class="tableWrap">
 <table>
 <thead>
-<tr><th>Time</th><th>File</th><th>Status</th></tr>
+<tr>
+  <th>Received</th>
+  <th>Document</th>
+  <th>Status</th>
+</tr>
 </thead>
 <tbody id="history"></tbody>
 </table>
@@ -191,27 +220,31 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmc
 const shop=new URLSearchParams(location.search).get("shop")||"General";
 shopTitle.innerText="Shop: "+shop;
 
-let lastActive=0;
+let lastActiveCount=0;
 let unlocked=false;
 
 document.addEventListener("click",()=>unlocked=true,{once:true});
 
 async function load(){
-  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&status=ALL`);
+  /* ALWAYS fetch ALL */
+  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}&status=ALL`);
   const d=await res.json();
 
+  /* stats */
   kToday.innerText=d.summary.today;
   kWeek.innerText=d.summary.week;
   kMonth.innerText=d.summary.month;
 
   const active=d.files.filter(f=>f.status==="ACTIVE");
-  const done=d.files.filter(f=>f.status==="DELETED");
+  const deleted=d.files.filter(f=>f.status==="DELETED");
 
-  if(unlocked && active.length>lastActive && lastActive!==0){
+  /* sound */
+  if(unlocked && active.length>lastActiveCount && lastActiveCount!==0){
     notifySound.play().catch(()=>{});
   }
-  lastActive=active.length;
+  lastActiveCount=active.length;
 
+  /* current documents (ACTIVE ONLY) */
   currentWrap.innerHTML=active.length
     ? active.map(f=>`
       <div class="currentFile">
@@ -221,19 +254,32 @@ async function load(){
         </div>
         <div class="fileActions">
           <button onclick="window.open('${f.fileUrl}')">Download</button>
-          <button class="doneBtn" onclick="done('${f.fileId}')">Done</button>
+          <button class="doneBtn" onclick="confirmDone('${f.fileId}')">Done</button>
         </div>
       </div>
     `).join("")
     : "Waiting for upload…";
 
-  history.innerHTML=done.map(f=>`
-    <tr>
+  /* recent files filtering */
+  const filter=status.value;
+  let recent=d.files;
+
+  if(filter==="ACTIVE") recent=active;
+  if(filter==="DELETED") recent=deleted;
+
+  history.innerHTML=recent.map(f=>`
+    <tr class="${f.status==="DELETED"?"deletedRow":""}">
       <td>${new Date(f.time).toLocaleString()}</td>
       <td>${f.fileName}</td>
-      <td>Completed</td>
+      <td>${f.status==="DELETED"?"Deleted":"Active"}</td>
     </tr>
   `).join("");
+}
+
+function confirmDone(id){
+  if(confirm("Mark this file as deleted?")){
+    done(id);
+  }
 }
 
 async function done(id){
