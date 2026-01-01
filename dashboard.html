@@ -5,130 +5,158 @@
 <title>Scan2Print Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: Arial; background:#f4f7f6; padding:18px; margin:0; }
+body{
+  font-family:Arial;
+  background:#f4f7f6;
+  padding:18px;
+  margin:0;
+}
 
-  .topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-bottom:12px;
-  }
+/* Top bar */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
 
-  .brand{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
 
-  /* 🔽 Optimized for your 120×122 PNG */
-  .logo{
-    width:88px;
-    height:auto;
-    object-fit:contain;
-  }
+.logo{
+  width:88px; /* 2× logo */
+  height:auto;
+}
 
-  h2 { margin:0; font-size:18px; }
-  .muted{color:#78909c;font-size:12px;margin-top:2px}
+h2{
+  margin:0;
+  font-size:20px;
+}
 
-  .controls{
-    display:flex;
-    gap:8px;
-    align-items:center;
-    flex-wrap:wrap;
-  }
+.muted{
+  color:#78909c;
+  font-size:13px;
+}
 
-  select, button{
-    padding:8px 10px;
-    border-radius:10px;
-    border:1px solid #cfd8dc;
-    background:#fff;
-    font-size:14px;
-  }
+/* Controls */
+.controls{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
 
-  button{
-    cursor:pointer;
-    background:#2d7ff9;
-    color:#fff;
-    border:none;
-  }
+select,button{
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid #cfd8dc;
+  font-size:14px;
+}
 
-  button:disabled{
-    opacity:.65;
-    cursor:not-allowed;
-  }
+button{
+  background:#2d7ff9;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
 
+/* 🔥 BIG STATISTICS SECTION (3× PRESENCE) */
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;
+  margin-top:30px;
+  margin-bottom:140px; /* pushes table to middle */
+}
+
+.kpi{
+  background:#fff;
+  padding:28px;
+  border-radius:22px;
+  border:1px solid #e6ecef;
+  text-align:center;
+}
+
+.kpi .label{
+  font-size:18px;
+  color:#607d8b;
+}
+
+.kpi .value{
+  font-size:56px;      /* 🔥 BIG NUMBERS */
+  font-weight:800;
+  margin-top:10px;
+  color:#263238;
+}
+
+/* Table */
+.tableWrap{
+  margin-top:40px;
+}
+
+table{
+  width:100%;
+  background:#fff;
+  border-collapse:collapse;
+  border-radius:18px;
+  overflow:hidden;
+}
+
+th,td{
+  padding:14px;
+  border-bottom:1px solid #eee;
+  font-size:14px;
+}
+
+th{
+  background:#2d7ff9;
+  color:#fff;
+  text-align:left;
+}
+
+.done{
+  color:gray;
+  text-decoration:line-through;
+}
+
+.actions button{
+  margin-right:6px;
+  margin-bottom:6px;
+}
+
+/* Mobile */
+@media(max-width:800px){
   .kpis{
-    display:grid;
-    grid-template-columns:repeat(3, minmax(140px, 1fr));
-    gap:10px;
-    margin:12px 0;
+    grid-template-columns:1fr;
+    margin-bottom:80px;
   }
-
-  .kpi{
-    background:#fff;
-    border-radius:14px;
-    padding:12px;
-    border:1px solid #e6ecef;
+  .kpi .value{
+    font-size:44px;
   }
-
-  .kpi .label{font-size:12px;color:#607d8b}
-  .kpi .value{font-size:22px;font-weight:800;margin-top:4px;color:#263238}
-
-  table{
-    width:100%;
-    background:#fff;
-    border-collapse:collapse;
-    border-radius:14px;
-    overflow:hidden;
-  }
-
-  th, td{
-    padding:12px;
-    border-bottom:1px solid #eee;
-    vertical-align:top;
-  }
-
-  th{
-    background:#2d7ff9;
-    color:#fff;
-    text-align:left;
-  }
-
-  .done{
-    color:gray;
-    text-decoration:line-through;
-  }
-
-  .actions button{
-    margin-right:6px;
-    margin-bottom:6px;
-  }
-
-  @media (max-width: 680px){
-    .kpis{grid-template-columns:1fr}
-  }
+}
 </style>
 </head>
 
 <body>
 
+<!-- TOP BAR -->
 <div class="topbar">
   <div class="brand">
-    <!-- ✅ Local PNG logo -->
-    <img src="logo.png" class="logo" alt="Scan2Print">
+    <img src="logo.png" class="logo">
     <div>
-      <h2 id="title">Dashboard</h2>
-      <div class="muted" id="subtitle"></div>
+      <h2 id="title"></h2>
+      <div class="muted">Upload monitoring dashboard</div>
     </div>
   </div>
 
   <div class="controls">
     <select id="period">
       <option value="today">Today</option>
-      <option value="week">This week</option>
-      <option value="month">This month</option>
+      <option value="week">Week</option>
+      <option value="month">Month</option>
     </select>
 
     <select id="status">
@@ -137,101 +165,76 @@
       <option value="ALL">All</option>
     </select>
 
-    <button id="refreshBtn" onclick="load()">Refresh</button>
+    <button onclick="load()">Refresh</button>
   </div>
 </div>
 
+<!-- BIG STATS -->
 <div class="kpis">
   <div class="kpi">
     <div class="label">Uploads Today</div>
     <div class="value" id="kToday">0</div>
   </div>
   <div class="kpi">
-    <div class="label">Uploads This Week</div>
+    <div class="label">This Week</div>
     <div class="value" id="kWeek">0</div>
   </div>
   <div class="kpi">
-    <div class="label">Uploads This Month</div>
+    <div class="label">This Month</div>
     <div class="value" id="kMonth">0</div>
   </div>
 </div>
 
+<!-- TABLE -->
+<div class="tableWrap">
 <table>
-  <thead>
-    <tr>
-      <th style="width:180px">Time</th>
-      <th>File</th>
-      <th style="width:100px">Status</th>
-      <th style="width:220px">Actions</th>
-    </tr>
-  </thead>
-  <tbody id="list"></tbody>
+<thead>
+<tr>
+  <th>Time</th>
+  <th>File</th>
+  <th>Status</th>
+  <th>Action</th>
+</tr>
+</thead>
+<tbody id="list"></tbody>
 </table>
+</div>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
 const shop = new URLSearchParams(location.search).get("shop") || "General";
-
 document.getElementById("title").innerText = "Shop: " + shop;
-document.getElementById("subtitle").innerText = "Manage uploads • Download • Mark done";
-
-const periodEl = document.getElementById("period");
-const statusEl = document.getElementById("status");
-const refreshBtn = document.getElementById("refreshBtn");
-
-periodEl.addEventListener("change", load);
-statusEl.addEventListener("change", load);
-
-function esc(s){
-  return String(s).replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[m]));
-}
 
 async function load(){
-  refreshBtn.disabled = true;
+  const res = await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}&status=${status.value}`);
+  const d = await res.json();
 
-  const res = await fetch(
-    `${SCRIPT_URL}?shop=${encodeURIComponent(shop)}&period=${periodEl.value}&status=${statusEl.value}`
-  );
-  const payload = await res.json();
+  kToday.innerText = d.summary.today;
+  kWeek.innerText  = d.summary.week;
+  kMonth.innerText = d.summary.month;
 
-  document.getElementById("kToday").innerText = payload.summary.today;
-  document.getElementById("kWeek").innerText = payload.summary.week;
-  document.getElementById("kMonth").innerText = payload.summary.month;
-
-  const rows = payload.files.map(f => {
-    const isDone = f.status === "DELETED";
-    return `
-      <tr>
-        <td>${new Date(f.time).toLocaleString()}</td>
-        <td class="${isDone ? "done" : ""}">${esc(f.fileName)}</td>
-        <td>${esc(f.status)}</td>
-        <td class="actions">
-          ${isDone ? "-" : `
-            <button onclick="window.open('${f.fileUrl}','_blank')">Download</button>
-            <button onclick="doneFile('${f.fileId}')">Done</button>
-          `}
-        </td>
-      </tr>
-    `;
-  }).join("");
-
-  document.getElementById("list").innerHTML =
-    rows || `<tr><td colspan="4" class="muted">No records found</td></tr>`;
-
-  refreshBtn.disabled = false;
+  list.innerHTML = d.files.map(f=>`
+    <tr>
+      <td>${new Date(f.time).toLocaleString()}</td>
+      <td class="${f.status==='DELETED'?'done':''}">${f.fileName}</td>
+      <td>${f.status}</td>
+      <td class="actions">
+        ${f.status==='ACTIVE'
+          ? `<button onclick="window.open('${f.fileUrl}')">Download</button>
+             <button onclick="done('${f.fileId}')">Done</button>`
+          : '-'}
+      </td>
+    </tr>
+  `).join("");
 }
 
-async function doneFile(fileId){
-  await fetch(`${SCRIPT_URL}?action=done&fileId=${encodeURIComponent(fileId)}`);
+async function done(id){
+  await fetch(`${SCRIPT_URL}?action=done&fileId=${id}`);
   load();
 }
 
 load();
-setInterval(load, 10000);
 </script>
 
 </body>
 </html>
-
