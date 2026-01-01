@@ -7,18 +7,17 @@
 
 <style>
 body{
-  font-family: Arial, sans-serif;
+  font-family:Arial, sans-serif;
   background:#f5f7f5;
   margin:0;
   padding:20px;
 }
 
-/* HEADER */
 .header{
   display:flex;
   justify-content:space-between;
-  align-items:center;
   flex-wrap:wrap;
+  align-items:center;
   margin-bottom:22px;
 }
 
@@ -32,73 +31,31 @@ body{
   width:88px;
 }
 
-.titleBlock h1{
-  margin:0;
-  font-size:22px;
-}
-
-.titleBlock .sub{
-  font-size:14px;
-  color:#6b7280;
-}
-
-/* FILTERS */
-.filters{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  background:#fff;
-  padding:10px 14px;
-  border-radius:14px;
-  border:1px solid #e5e7eb;
-}
-
-select,button{
-  padding:10px 12px;
-  font-size:14px;
-  border-radius:10px;
-  border:1px solid #d1d5db;
-  background:#fff;
-}
-
-button{
-  background:#2563eb;
-  color:#fff;
-  border:none;
-  cursor:pointer;
-}
-
-/* CURRENT FILES */
 .sectionTitle{
   font-size:18px;
   font-weight:700;
-  margin:28px 0 12px;
+  margin:24px 0 10px;
 }
 
+/* CURRENT FILES */
 .currentWrap{
   background:#fff;
-  border-radius:20px;
   border:2px solid #2563eb;
+  border-radius:18px;
   padding:16px;
-  margin-bottom:28px;
 }
 
 .currentFile{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  background:#f0f7ff;
   padding:14px;
   border-radius:14px;
-  background:#f0f7ff;
   margin-bottom:10px;
 }
 
-.currentFile:last-child{
-  margin-bottom:0;
-}
-
 .fileInfo{
-  font-size:15px;
   font-weight:600;
 }
 
@@ -107,14 +64,27 @@ button{
   color:#6b7280;
 }
 
-.fileActions button{
-  margin-left:8px;
+.fileActions{
+  display:flex;
+  align-items:center;
+  gap:18px; /* SAFETY GAP */
+}
+
+/* BUTTONS */
+button{
+  padding:10px 14px;
+  border-radius:10px;
+  border:none;
+  background:#2563eb;
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
 }
 
 .doneBtn{
   background:#fff;
   color:#2563eb;
-  border:1px solid #2563eb;
+  border:2px solid #2563eb;
 }
 
 /* STATS */
@@ -129,28 +99,23 @@ button{
   background:#fff;
   border-radius:18px;
   padding:18px;
-  border:1px solid #e5e7eb;
   text-align:center;
 }
 
 .statLabel{
   font-size:16px;
   font-weight:600;
-  color:#374151;
 }
 
 .statValue{
   font-size:36px;
   font-weight:800;
-  margin-top:6px;
-  color:#111827;
 }
 
 /* HISTORY */
 .tableWrap{
   background:#fff;
   border-radius:18px;
-  border:1px solid #e5e7eb;
   overflow:hidden;
 }
 
@@ -159,18 +124,11 @@ table{
   border-collapse:collapse;
 }
 
-th{
-  background:#e5e7eb;
-  color:#111827;
+th,td{
   padding:14px;
-  text-align:left;
-}
-
-td{
-  padding:14px;
-  border-bottom:1px solid #f1f5f9;
+  border-bottom:1px solid #eee;
   font-size:14px;
-  opacity:0.7;
+  opacity:.7;
 }
 
 @media(max-width:800px){
@@ -183,43 +141,26 @@ td{
 
 <body>
 
-<!-- 🔔 Notification Sound -->
 <audio id="notifySound" preload="auto">
   <source src="ding.mp3" type="audio/mpeg">
 </audio>
 
-<!-- HEADER -->
 <div class="header">
   <div class="brand">
     <img src="logo.png" class="logo">
-    <div class="titleBlock">
-      <h1 id="shopTitle"></h1>
-      <div class="sub">Live document intake</div>
+    <div>
+      <h2 id="shopTitle"></h2>
+      <div>Live document intake</div>
     </div>
   </div>
-
-  <div class="filters">
-    <select id="period">
-      <option value="today">Today</option>
-      <option value="week">Week</option>
-      <option value="month">Month</option>
-    </select>
-    <select id="status">
-      <option value="ACTIVE">Active</option>
-      <option value="DELETED">Completed</option>
-      <option value="ALL">All</option>
-    </select>
-    <button onclick="load()">Refresh</button>
-  </div>
+  <button onclick="load()">Refresh</button>
 </div>
 
-<!-- CURRENT DOCUMENTS -->
 <div class="sectionTitle">Current Documents</div>
 <div class="currentWrap" id="currentWrap">
-  <div class="fileTime">Waiting for customer upload…</div>
+  Waiting for upload…
 </div>
 
-<!-- STATS -->
 <div class="stats">
   <div class="stat">
     <div class="statLabel">Jobs Today</div>
@@ -235,57 +176,44 @@ td{
   </div>
 </div>
 
-<!-- HISTORY -->
 <div class="sectionTitle">Recent Files</div>
 <div class="tableWrap">
 <table>
 <thead>
-<tr>
-  <th>Received</th>
-  <th>Document</th>
-  <th>Status</th>
-</tr>
+<tr><th>Time</th><th>File</th><th>Status</th></tr>
 </thead>
 <tbody id="history"></tbody>
 </table>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
-const shop = new URLSearchParams(location.search).get("shop") || "General";
-document.getElementById("shopTitle").innerText = "Shop: " + shop;
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
+const shop=new URLSearchParams(location.search).get("shop")||"General";
+shopTitle.innerText="Shop: "+shop;
 
-/* 🔔 Sound control */
-let lastActiveCount = 0;
-let userInteracted = false;
+let lastActive=0;
+let unlocked=false;
 
-document.addEventListener("click", () => {
-  userInteracted = true;
-}, { once:true });
+document.addEventListener("click",()=>unlocked=true,{once:true});
 
 async function load(){
-  const res = await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}&status=ALL`);
-  const d = await res.json();
+  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&status=ALL`);
+  const d=await res.json();
 
-  kToday.innerText = d.summary.today;
-  kWeek.innerText  = d.summary.week;
-  kMonth.innerText = d.summary.month;
+  kToday.innerText=d.summary.today;
+  kWeek.innerText=d.summary.week;
+  kMonth.innerText=d.summary.month;
 
-  const active = d.files.filter(f => f.status === "ACTIVE");
-  const done = d.files.filter(f => f.status === "DELETED");
+  const active=d.files.filter(f=>f.status==="ACTIVE");
+  const done=d.files.filter(f=>f.status==="DELETED");
 
-  /* 🔔 Play sound ONLY if a new file arrives */
-  if (
-    userInteracted &&
-    active.length > lastActiveCount &&
-    lastActiveCount !== 0
-  ) {
-    document.getElementById("notifySound").play().catch(()=>{});
+  if(unlocked && active.length>lastActive && lastActive!==0){
+    notifySound.play().catch(()=>{});
   }
-  lastActiveCount = active.length;
+  lastActive=active.length;
 
-  currentWrap.innerHTML = active.length
-    ? active.map(f => `
+  currentWrap.innerHTML=active.length
+    ? active.map(f=>`
       <div class="currentFile">
         <div>
           <div class="fileInfo">${f.fileName}</div>
@@ -293,30 +221,29 @@ async function load(){
         </div>
         <div class="fileActions">
           <button onclick="window.open('${f.fileUrl}')">Download</button>
-          <button class="doneBtn" onclick="doneFile('${f.fileId}')">Done</button>
+          <button class="doneBtn" onclick="done('${f.fileId}')">Done</button>
         </div>
       </div>
     `).join("")
-    : `<div class="fileTime">Waiting for customer upload…</div>`;
+    : "Waiting for upload…";
 
-  history.innerHTML = done.map(f => `
+  history.innerHTML=done.map(f=>`
     <tr>
       <td>${new Date(f.time).toLocaleString()}</td>
       <td>${f.fileName}</td>
-      <td>${f.status}</td>
+      <td>Completed</td>
     </tr>
   `).join("");
 }
 
-async function doneFile(id){
+async function done(id){
   await fetch(`${SCRIPT_URL}?action=done&fileId=${id}`);
   load();
 }
 
 load();
-setInterval(load, 10000);
+setInterval(load,10000);
 </script>
 
 </body>
 </html>
-
