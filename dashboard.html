@@ -3,75 +3,233 @@
 <head>
 <meta charset="utf-8">
 <title>Scan2Print Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: Arial; background:#f4f7f6; padding:20px; }
-h2 { margin-bottom:10px; }
-table { width:100%; background:#fff; border-collapse:collapse; }
-th, td { padding:12px; border-bottom:1px solid #ddd; }
-th { background:#2d7ff9; color:#fff; }
-button { padding:6px 12px; cursor:pointer; }
-.done { color:gray; text-decoration:line-through; }
+  body { font-family: Arial; background:#f4f7f6; padding:18px; margin:0; }
+
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  /* 🔽 Optimized for your 120×122 PNG */
+  .logo{
+    width:44px;
+    height:auto;
+    object-fit:contain;
+  }
+
+  h2 { margin:0; font-size:18px; }
+  .muted{color:#78909c;font-size:12px;margin-top:2px}
+
+  .controls{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  select, button{
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid #cfd8dc;
+    background:#fff;
+    font-size:14px;
+  }
+
+  button{
+    cursor:pointer;
+    background:#2d7ff9;
+    color:#fff;
+    border:none;
+  }
+
+  button:disabled{
+    opacity:.65;
+    cursor:not-allowed;
+  }
+
+  .kpis{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(140px, 1fr));
+    gap:10px;
+    margin:12px 0;
+  }
+
+  .kpi{
+    background:#fff;
+    border-radius:14px;
+    padding:12px;
+    border:1px solid #e6ecef;
+  }
+
+  .kpi .label{font-size:12px;color:#607d8b}
+  .kpi .value{font-size:22px;font-weight:800;margin-top:4px;color:#263238}
+
+  table{
+    width:100%;
+    background:#fff;
+    border-collapse:collapse;
+    border-radius:14px;
+    overflow:hidden;
+  }
+
+  th, td{
+    padding:12px;
+    border-bottom:1px solid #eee;
+    vertical-align:top;
+  }
+
+  th{
+    background:#2d7ff9;
+    color:#fff;
+    text-align:left;
+  }
+
+  .done{
+    color:gray;
+    text-decoration:line-through;
+  }
+
+  .actions button{
+    margin-right:6px;
+    margin-bottom:6px;
+  }
+
+  @media (max-width: 680px){
+    .kpis{grid-template-columns:1fr}
+  }
 </style>
 </head>
+
 <body>
 
-<h2 id="title">Dashboard</h2>
+<div class="topbar">
+  <div class="brand">
+    <!-- ✅ Local PNG logo -->
+    <img src="logo.png" class="logo" alt="Scan2Print">
+    <div>
+      <h2 id="title">Dashboard</h2>
+      <div class="muted" id="subtitle"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <select id="period">
+      <option value="today">Today</option>
+      <option value="week">This week</option>
+      <option value="month">This month</option>
+    </select>
+
+    <select id="status">
+      <option value="ACTIVE">Active</option>
+      <option value="DELETED">Deleted</option>
+      <option value="ALL">All</option>
+    </select>
+
+    <button id="refreshBtn" onclick="load()">Refresh</button>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi">
+    <div class="label">Uploads Today</div>
+    <div class="value" id="kToday">0</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Uploads This Week</div>
+    <div class="value" id="kWeek">0</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Uploads This Month</div>
+    <div class="value" id="kMonth">0</div>
+  </div>
+</div>
 
 <table>
-<thead>
-<tr>
-  <th>Time</th>
-  <th>File</th>
-  <th>Status</th>
-  <th>Actions</th>
-</tr>
-</thead>
-<tbody id="list"></tbody>
+  <thead>
+    <tr>
+      <th style="width:180px">Time</th>
+      <th>File</th>
+      <th style="width:100px">Status</th>
+      <th style="width:220px">Actions</th>
+    </tr>
+  </thead>
+  <tbody id="list"></tbody>
 </table>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
-const shop = new URLSearchParams(location.search).get("shop");
+const shop = new URLSearchParams(location.search).get("shop") || "General";
 
 document.getElementById("title").innerText = "Shop: " + shop;
+document.getElementById("subtitle").innerText = "Manage uploads • Download • Mark done";
 
-async function load() {
-  const res = await fetch(`${SCRIPT_URL}?shop=${shop}`);
-  const data = await res.json();
+const periodEl = document.getElementById("period");
+const statusEl = document.getElementById("status");
+const refreshBtn = document.getElementById("refreshBtn");
 
-  let html = "";
-  data.forEach(f => {
+periodEl.addEventListener("change", load);
+statusEl.addEventListener("change", load);
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+async function load(){
+  refreshBtn.disabled = true;
+
+  const res = await fetch(
+    `${SCRIPT_URL}?shop=${encodeURIComponent(shop)}&period=${periodEl.value}&status=${statusEl.value}`
+  );
+  const payload = await res.json();
+
+  document.getElementById("kToday").innerText = payload.summary.today;
+  document.getElementById("kWeek").innerText = payload.summary.week;
+  document.getElementById("kMonth").innerText = payload.summary.month;
+
+  const rows = payload.files.map(f => {
     const isDone = f.status === "DELETED";
-    html += `
+    return `
       <tr>
         <td>${new Date(f.time).toLocaleString()}</td>
-        <td class="${isDone ? 'done' : ''}">${f.fileName}</td>
-        <td>${f.status}</td>
-        <td>
+        <td class="${isDone ? "done" : ""}">${esc(f.fileName)}</td>
+        <td>${esc(f.status)}</td>
+        <td class="actions">
           ${isDone ? "-" : `
-            <button onclick="download('${f.fileUrl}')">Download</button>
-            <button onclick="done('${f.fileId}')">Done</button>
+            <button onclick="window.open('${f.fileUrl}','_blank')">Download</button>
+            <button onclick="doneFile('${f.fileId}')">Done</button>
           `}
         </td>
       </tr>
     `;
-  });
+  }).join("");
 
-  document.getElementById("list").innerHTML = html;
+  document.getElementById("list").innerHTML =
+    rows || `<tr><td colspan="4" class="muted">No records found</td></tr>`;
+
+  refreshBtn.disabled = false;
 }
 
-function download(fileUrl) {
-  // Direct Telegram download (exactly like your old working version)
-  window.open(fileUrl, "_blank");
-}
-
-async function done(fileId) {
-  await fetch(`${SCRIPT_URL}?action=done&fileId=${fileId}`);
+async function doneFile(fileId){
+  await fetch(`${SCRIPT_URL}?action=done&fileId=${encodeURIComponent(fileId)}`);
   load();
 }
 
 load();
-setInterval(load, 20000);
+setInterval(load, 10000);
 </script>
 
 </body>
