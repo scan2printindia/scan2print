@@ -6,156 +6,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
-  font-family:Arial, sans-serif;
-  background:#f5f7f5;
-  margin:0;
-  padding:20px;
-}
+body{font-family:Arial;background:#f5f7f5;margin:0;padding:20px}
+.logo{width:88px}
+.header{display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;gap:14px;align-items:center}
+.sectionTitle{font-size:18px;font-weight:700;margin:24px 0 10px}
 
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-  margin-bottom:22px;
-}
+.currentWrap{background:#fff;border:2px solid #2563eb;border-radius:18px;padding:16px}
+.currentFile{display:flex;justify-content:space-between;background:#f0f7ff;padding:14px;border-radius:14px;margin-bottom:10px}
+.fileActions{display:flex;gap:22px}
+button{padding:10px 14px;border-radius:10px;border:none;background:#2563eb;color:#fff;cursor:pointer}
+.doneBtn{background:#fff;color:#2563eb;border:2px solid #2563eb}
 
-.brand{
-  display:flex;
-  align-items:center;
-  gap:14px;
-}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:30px 0}
+.stat{background:#fff;border-radius:18px;padding:18px;text-align:center}
+.statValue{font-size:36px;font-weight:800}
 
-.logo{
-  width:88px;
-}
+.filterBar{display:flex;gap:10px;margin-bottom:10px;align-items:center}
 
-.filters{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-
-select,button{
-  padding:10px 12px;
-  border-radius:10px;
-  border:1px solid #d1d5db;
-  background:#fff;
-  font-size:14px;
-}
-
-button{
-  background:#2563eb;
-  color:#fff;
-  border:none;
-  cursor:pointer;
-}
-
-.sectionTitle{
-  font-size:18px;
-  font-weight:700;
-  margin:24px 0 10px;
-}
-
-/* CURRENT FILES */
-.currentWrap{
-  background:#fff;
-  border:2px solid #2563eb;
-  border-radius:18px;
-  padding:16px;
-}
-
-.currentFile{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:#f0f7ff;
-  padding:14px;
-  border-radius:14px;
-  margin-bottom:10px;
-}
-
-.fileInfo{
-  font-weight:600;
-}
-
-.fileTime{
-  font-size:13px;
-  color:#6b7280;
-}
-
-.fileActions{
-  display:flex;
-  gap:20px; /* safety gap */
-}
-
-.doneBtn{
-  background:#fff;
-  color:#2563eb;
-  border:2px solid #2563eb;
-}
-
-/* STATS */
-.stats{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
-  margin:30px 0;
-}
-
-.stat{
-  background:#fff;
-  border-radius:18px;
-  padding:18px;
-  text-align:center;
-}
-
-.statLabel{
-  font-size:16px;
-  font-weight:600;
-}
-
-.statValue{
-  font-size:36px;
-  font-weight:800;
-}
-
-/* RECENT FILES */
-.tableWrap{
-  background:#fff;
-  border-radius:18px;
-  overflow:hidden;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th,td{
-  padding:14px;
-  border-bottom:1px solid #eee;
-  font-size:14px;
-}
-
-.deletedRow{
-  opacity:0.5;
-}
-
-@media(max-width:800px){
-  .stats{
-    grid-template-columns:1fr;
-  }
-}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden}
+th,td{padding:14px;border-bottom:1px solid #eee;font-size:14px}
+.deletedRow{opacity:.5}
 </style>
 </head>
 
 <body>
-
-<audio id="notifySound" preload="auto">
-  <source src="ding.mp3" type="audio/mpeg">
-</audio>
 
 <div class="header">
   <div class="brand">
@@ -165,72 +40,50 @@ th,td{
       <div>Live document intake</div>
     </div>
   </div>
-
-  <div class="filters">
-    <select id="period">
-      <option value="today">Today</option>
-      <option value="week">Week</option>
-      <option value="month">Month</option>
-    </select>
-
-    <select id="status">
-      <option value="ALL">All</option>
-      <option value="ACTIVE">Active</option>
-      <option value="DELETED">Deleted</option>
-    </select>
-
-    <button onclick="load()">Refresh</button>
-  </div>
 </div>
 
 <div class="sectionTitle">Current Documents</div>
 <div class="currentWrap" id="currentWrap">Waiting for upload…</div>
 
 <div class="stats">
-  <div class="stat">
-    <div class="statLabel">Jobs Today</div>
-    <div class="statValue" id="kToday">0</div>
-  </div>
-  <div class="stat">
-    <div class="statLabel">This Week</div>
-    <div class="statValue" id="kWeek">0</div>
-  </div>
-  <div class="stat">
-    <div class="statLabel">This Month</div>
-    <div class="statValue" id="kMonth">0</div>
-  </div>
+  <div class="stat"><div>Today</div><div class="statValue" id="kToday">0</div></div>
+  <div class="stat"><div>Week</div><div class="statValue" id="kWeek">0</div></div>
+  <div class="stat"><div>Month</div><div class="statValue" id="kMonth">0</div></div>
 </div>
 
 <div class="sectionTitle">Recent Files</div>
-<div class="tableWrap">
+<div class="filterBar">
+  <select id="period">
+    <option value="today">Today</option>
+    <option value="week">Week</option>
+    <option value="month">Month</option>
+  </select>
+
+  <select id="status">
+    <option value="ALL">All</option>
+    <option value="ACTIVE">Active</option>
+    <option value="DELETED">Deleted</option>
+  </select>
+
+  <button onclick="load()">Apply</button>
+</div>
+
 <table>
 <thead>
-<tr>
-  <th>Received</th>
-  <th>Document</th>
-  <th>Status</th>
-</tr>
+<tr><th>Received</th><th>Document</th><th>Status</th></tr>
 </thead>
 <tbody id="history"></tbody>
 </table>
-</div>
 
 <script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
 const shop=new URLSearchParams(location.search).get("shop")||"General";
 shopTitle.innerText="Shop: "+shop;
 
-let lastActiveCount=0;
-let unlocked=false;
-
-document.addEventListener("click",()=>unlocked=true,{once:true});
-
 async function load(){
-  /* ALWAYS fetch ALL */
-  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}&status=ALL`);
+  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}`);
   const d=await res.json();
 
-  /* stats */
   kToday.innerText=d.summary.today;
   kWeek.innerText=d.summary.week;
   kMonth.innerText=d.summary.month;
@@ -238,57 +91,40 @@ async function load(){
   const active=d.files.filter(f=>f.status==="ACTIVE");
   const deleted=d.files.filter(f=>f.status==="DELETED");
 
-  /* sound */
-  if(unlocked && active.length>lastActiveCount && lastActiveCount!==0){
-    notifySound.play().catch(()=>{});
-  }
-  lastActiveCount=active.length;
-
-  /* current documents (ACTIVE ONLY) */
   currentWrap.innerHTML=active.length
     ? active.map(f=>`
       <div class="currentFile">
         <div>
-          <div class="fileInfo">${f.fileName}</div>
-          <div class="fileTime">Received ${new Date(f.time).toLocaleTimeString()}</div>
+          <b>${f.fileName}</b><br>
+          <small>${new Date(f.time).toLocaleTimeString()}</small>
         </div>
         <div class="fileActions">
           <button onclick="window.open('${f.fileUrl}')">Download</button>
-          <button class="doneBtn" onclick="confirmDone('${f.fileId}')">Done</button>
+          <button class="doneBtn" onclick="done('${f.fileId}')">Done</button>
         </div>
-      </div>
-    `).join("")
+      </div>`).join("")
     : "Waiting for upload…";
 
-  /* recent files filtering */
-  const filter=status.value;
   let recent=d.files;
-
-  if(filter==="ACTIVE") recent=active;
-  if(filter==="DELETED") recent=deleted;
+  if(status.value==="ACTIVE") recent=active;
+  if(status.value==="DELETED") recent=deleted;
 
   history.innerHTML=recent.map(f=>`
     <tr class="${f.status==="DELETED"?"deletedRow":""}">
       <td>${new Date(f.time).toLocaleString()}</td>
       <td>${f.fileName}</td>
-      <td>${f.status==="DELETED"?"Deleted":"Active"}</td>
-    </tr>
-  `).join("");
-}
-
-function confirmDone(id){
-  if(confirm("Mark this file as deleted?")){
-    done(id);
-  }
+      <td>${f.status}</td>
+    </tr>`).join("");
 }
 
 async function done(id){
-  await fetch(`${SCRIPT_URL}?action=done&fileId=${id}`);
-  load();
+  if(confirm("Mark this file as deleted?")){
+    await fetch(`${SCRIPT_URL}?action=done&fileId=${id}`);
+    load();
+  }
 }
 
 load();
-setInterval(load,10000);
 </script>
 
 </body>
