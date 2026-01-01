@@ -4,21 +4,22 @@
 <meta charset="utf-8">
 <title>Scan2Print Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 body{
-  font-family:Arial;
-  background:#f4f7f6;
-  padding:18px;
+  font-family: Arial, sans-serif;
+  background:#f5f7f5;
   margin:0;
+  padding:20px;
 }
 
-/* Top bar */
-.topbar{
+/* HEADER */
+.header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:12px;
   flex-wrap:wrap;
+  margin-bottom:22px;
 }
 
 .brand{
@@ -28,113 +29,153 @@ body{
 }
 
 .logo{
-  width:88px; /* 2× logo */
-  height:auto;
+  width:88px;
 }
 
-h2{
+.titleBlock h1{
   margin:0;
-  font-size:20px;
+  font-size:22px;
 }
 
-.muted{
-  color:#78909c;
-  font-size:13px;
+.titleBlock .sub{
+  font-size:14px;
+  color:#6b7280;
 }
 
-/* Controls */
-.controls{
+/* FILTERS */
+.filters{
   display:flex;
   gap:10px;
-  flex-wrap:wrap;
+  align-items:center;
+  background:#fff;
+  padding:10px 14px;
+  border-radius:14px;
+  border:1px solid #e5e7eb;
 }
 
 select,button{
   padding:10px 12px;
-  border-radius:10px;
-  border:1px solid #cfd8dc;
   font-size:14px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  background:#fff;
 }
 
 button{
-  background:#2d7ff9;
+  background:#2563eb;
   color:#fff;
   border:none;
   cursor:pointer;
 }
 
-/* 🔥 BIG STATISTICS SECTION (3× PRESENCE) */
-.kpis{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:18px;
-  margin-top:30px;
-  margin-bottom:140px; /* pushes table to middle */
+/* CURRENT FILES */
+.sectionTitle{
+  font-size:18px;
+  font-weight:700;
+  margin:28px 0 12px;
 }
 
-.kpi{
+.currentWrap{
   background:#fff;
-  padding:28px;
-  border-radius:22px;
-  border:1px solid #e6ecef;
+  border-radius:20px;
+  border:2px solid #2563eb;
+  padding:16px;
+  margin-bottom:28px;
+}
+
+.currentFile{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px;
+  border-radius:14px;
+  background:#f0f7ff;
+  margin-bottom:10px;
+}
+
+.currentFile:last-child{
+  margin-bottom:0;
+}
+
+.fileInfo{
+  font-size:15px;
+  font-weight:600;
+}
+
+.fileTime{
+  font-size:13px;
+  color:#6b7280;
+}
+
+.fileActions button{
+  margin-left:8px;
+}
+
+.doneBtn{
+  background:#fff;
+  color:#2563eb;
+  border:1px solid #2563eb;
+}
+
+/* STATS */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin:30px 0;
+}
+
+.stat{
+  background:#fff;
+  border-radius:18px;
+  padding:18px;
+  border:1px solid #e5e7eb;
   text-align:center;
 }
 
-.kpi .label{
-  font-size:18px;
-  color:#607d8b;
+.statLabel{
+  font-size:16px;
+  font-weight:600;
+  color:#374151;
 }
 
-.kpi .value{
-  font-size:56px;      /* 🔥 BIG NUMBERS */
+.statValue{
+  font-size:36px;
   font-weight:800;
-  margin-top:10px;
-  color:#263238;
+  margin-top:6px;
+  color:#111827;
 }
 
-/* Table */
+/* HISTORY */
 .tableWrap{
-  margin-top:40px;
+  background:#fff;
+  border-radius:18px;
+  border:1px solid #e5e7eb;
+  overflow:hidden;
 }
 
 table{
   width:100%;
-  background:#fff;
   border-collapse:collapse;
-  border-radius:18px;
-  overflow:hidden;
-}
-
-th,td{
-  padding:14px;
-  border-bottom:1px solid #eee;
-  font-size:14px;
 }
 
 th{
-  background:#2d7ff9;
-  color:#fff;
+  background:#e5e7eb;
+  color:#111827;
+  padding:14px;
   text-align:left;
 }
 
-.done{
-  color:gray;
-  text-decoration:line-through;
+td{
+  padding:14px;
+  border-bottom:1px solid #f1f5f9;
+  font-size:14px;
+  opacity:0.7;
 }
 
-.actions button{
-  margin-right:6px;
-  margin-bottom:6px;
-}
-
-/* Mobile */
 @media(max-width:800px){
-  .kpis{
+  .stats{
     grid-template-columns:1fr;
-    margin-bottom:80px;
-  }
-  .kpi .value{
-    font-size:44px;
   }
 }
 </style>
@@ -142,98 +183,138 @@ th{
 
 <body>
 
-<!-- TOP BAR -->
-<div class="topbar">
+<!-- 🔔 Notification Sound -->
+<audio id="notifySound" preload="auto">
+  <source src="ding.mp3" type="audio/mpeg">
+</audio>
+
+<!-- HEADER -->
+<div class="header">
   <div class="brand">
     <img src="logo.png" class="logo">
-    <div>
-      <h2 id="title"></h2>
-      <div class="muted">Upload monitoring dashboard</div>
+    <div class="titleBlock">
+      <h1 id="shopTitle"></h1>
+      <div class="sub">Live document intake</div>
     </div>
   </div>
 
-  <div class="controls">
+  <div class="filters">
     <select id="period">
       <option value="today">Today</option>
       <option value="week">Week</option>
       <option value="month">Month</option>
     </select>
-
     <select id="status">
       <option value="ACTIVE">Active</option>
-      <option value="DELETED">Deleted</option>
+      <option value="DELETED">Completed</option>
       <option value="ALL">All</option>
     </select>
-
     <button onclick="load()">Refresh</button>
   </div>
 </div>
 
-<!-- BIG STATS -->
-<div class="kpis">
-  <div class="kpi">
-    <div class="label">Uploads Today</div>
-    <div class="value" id="kToday">0</div>
+<!-- CURRENT DOCUMENTS -->
+<div class="sectionTitle">Current Documents</div>
+<div class="currentWrap" id="currentWrap">
+  <div class="fileTime">Waiting for customer upload…</div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="statLabel">Jobs Today</div>
+    <div class="statValue" id="kToday">0</div>
   </div>
-  <div class="kpi">
-    <div class="label">This Week</div>
-    <div class="value" id="kWeek">0</div>
+  <div class="stat">
+    <div class="statLabel">This Week</div>
+    <div class="statValue" id="kWeek">0</div>
   </div>
-  <div class="kpi">
-    <div class="label">This Month</div>
-    <div class="value" id="kMonth">0</div>
+  <div class="stat">
+    <div class="statLabel">This Month</div>
+    <div class="statValue" id="kMonth">0</div>
   </div>
 </div>
 
-<!-- TABLE -->
+<!-- HISTORY -->
+<div class="sectionTitle">Recent Files</div>
 <div class="tableWrap">
 <table>
 <thead>
 <tr>
-  <th>Time</th>
-  <th>File</th>
+  <th>Received</th>
+  <th>Document</th>
   <th>Status</th>
-  <th>Action</th>
 </tr>
 </thead>
-<tbody id="list"></tbody>
+<tbody id="history"></tbody>
 </table>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
+const SCRIPT_URL = "PASTE_YOUR_APPSCRIPT_URL";
 const shop = new URLSearchParams(location.search).get("shop") || "General";
-document.getElementById("title").innerText = "Shop: " + shop;
+document.getElementById("shopTitle").innerText = "Shop: " + shop;
+
+/* 🔔 Sound control */
+let lastActiveCount = 0;
+let userInteracted = false;
+
+document.addEventListener("click", () => {
+  userInteracted = true;
+}, { once:true });
 
 async function load(){
-  const res = await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}&status=${status.value}`);
+  const res = await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}&status=ALL`);
   const d = await res.json();
 
   kToday.innerText = d.summary.today;
   kWeek.innerText  = d.summary.week;
   kMonth.innerText = d.summary.month;
 
-  list.innerHTML = d.files.map(f=>`
+  const active = d.files.filter(f => f.status === "ACTIVE");
+  const done = d.files.filter(f => f.status === "DELETED");
+
+  /* 🔔 Play sound ONLY if a new file arrives */
+  if (
+    userInteracted &&
+    active.length > lastActiveCount &&
+    lastActiveCount !== 0
+  ) {
+    document.getElementById("notifySound").play().catch(()=>{});
+  }
+  lastActiveCount = active.length;
+
+  currentWrap.innerHTML = active.length
+    ? active.map(f => `
+      <div class="currentFile">
+        <div>
+          <div class="fileInfo">${f.fileName}</div>
+          <div class="fileTime">Received ${new Date(f.time).toLocaleTimeString()}</div>
+        </div>
+        <div class="fileActions">
+          <button onclick="window.open('${f.fileUrl}')">Download</button>
+          <button class="doneBtn" onclick="doneFile('${f.fileId}')">Done</button>
+        </div>
+      </div>
+    `).join("")
+    : `<div class="fileTime">Waiting for customer upload…</div>`;
+
+  history.innerHTML = done.map(f => `
     <tr>
       <td>${new Date(f.time).toLocaleString()}</td>
-      <td class="${f.status==='DELETED'?'done':''}">${f.fileName}</td>
+      <td>${f.fileName}</td>
       <td>${f.status}</td>
-      <td class="actions">
-        ${f.status==='ACTIVE'
-          ? `<button onclick="window.open('${f.fileUrl}')">Download</button>
-             <button onclick="done('${f.fileId}')">Done</button>`
-          : '-'}
-      </td>
     </tr>
   `).join("");
 }
 
-async function done(id){
+async function doneFile(id){
   await fetch(`${SCRIPT_URL}?action=done&fileId=${id}`);
   load();
 }
 
 load();
+setInterval(load, 10000);
 </script>
 
 </body>
