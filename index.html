@@ -5,7 +5,7 @@
 <title>Scan2Print Upload</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body {
+  body{
     font-family: Arial;
     background:#f4f7f6;
     display:flex;
@@ -14,59 +14,111 @@
     height:100vh;
     margin:0;
   }
-  .card {
+
+  .card{
     background:#fff;
-    padding:26px;
-    border-radius:14px;
+    padding:28px;
+    border-radius:16px;
     width:92%;
     max-width:420px;
     text-align:center;
     border:1px solid #e6ecef;
   }
+
   .brand{
     display:flex;
     flex-direction:column;
-    gap:10px;
     align-items:center;
-    margin-bottom:14px;
+    gap:8px;
+    margin-bottom:16px;
   }
+
   .logo{
-    width:60px;
+    width:128px;
     height:auto;
-    object-fit:contain;
   }
+
   .brandName{
-    font-weight:800;
     font-size:18px;
+    font-weight:800;
   }
-  .brandSub{
-    font-size:12px;
-    color:#607d8b;
+
+  input[type="file"]{
+    width:100%;
+    margin:14px 0;
   }
-  button {
+
+  button{
+    width:100%;
+    padding:12px;
     background:#2d7ff9;
     color:#fff;
     border:none;
-    padding:12px;
-    width:100%;
-    font-size:16px;
     border-radius:10px;
+    font-size:16px;
     cursor:pointer;
+  }
+
+  button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+  }
+
+  /* Status Queue */
+  .queue{
+    margin-top:18px;
+    text-align:left;
+    font-size:14px;
+  }
+
+  .step{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+    color:#607d8b;
+  }
+
+  .dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#cfd8dc;
+  }
+
+  .working .dot{
+    background:#2d7ff9;
+    animation:pulse 1s infinite;
+  }
+
+  .done .dot{
+    background:#2ecc71;
+  }
+
+  @keyframes pulse{
+    0%{opacity:.3}
+    50%{opacity:1}
+    100%{opacity:.3}
   }
 </style>
 </head>
 
 <body>
+
 <div class="card">
   <div class="brand">
     <img src="logo.png" class="logo" alt="Scan2Print">
     <div class="brandName">Scan2Print</div>
-    <div class="brandSub">Upload documents for printing</div>
   </div>
 
-  <input type="file" id="file"><br><br>
-  <button onclick="upload()">Upload</button>
-  <div id="status"></div>
+  <input type="file" id="file">
+  <button id="uploadBtn" onclick="upload()">Upload</button>
+
+  <div class="queue">
+    <div class="step" id="s1"><span class="dot"></span> Uploading file</div>
+    <div class="step" id="s2"><span class="dot"></span> Sending to print shop</div>
+    <div class="step" id="s3"><span class="dot"></span> Saving order</div>
+  </div>
 </div>
 
 <script>
@@ -74,32 +126,60 @@ const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
 const CHAT_ID = "6231880924";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
 
-async function upload() {
+function setStep(id, state){
+  const el = document.getElementById(id);
+  el.className = "step " + state;
+}
+
+async function upload(){
   const fileInput = document.getElementById("file");
-  if (!fileInput.files[0]) return alert("Select a file");
+  const btn = document.getElementById("uploadBtn");
 
-  const formData = new FormData();
-  formData.append("document", fileInput.files[0]);
+  if(!fileInput.files[0]){
+    alert("Please select a file");
+    return;
+  }
 
-  const tgRes = await fetch(
-    `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`,
-    { method: "POST", body: formData }
-  );
-  const tgData = await tgRes.json();
+  btn.disabled = true;
+  setStep("s1","working");
 
-  await fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify({
-      shop: new URLSearchParams(location.search).get("shop") || "General",
-      fileName: fileInput.files[0].name,
-      fileId: tgData.result.document.file_id
-    })
-  });
+  try{
+    /* 1. Upload to Telegram */
+    const fd = new FormData();
+    fd.append("document", fileInput.files[0]);
 
-  alert("Uploaded successfully");
-  fileInput.value = "";
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`,
+      { method:"POST", body:fd }
+    );
+    const tgData = await tgRes.json();
+    setStep("s1","done");
+    setStep("s2","working");
+
+    /* 2. Save to dashboard */
+    await fetch(SCRIPT_URL,{
+      method:"POST",
+      mode:"no-cors",
+      body:JSON.stringify({
+        shop:new URLSearchParams(location.search).get("shop") || "General",
+        fileName:fileInput.files[0].name,
+        fileId:tgData.result.document.file_id
+      })
+    });
+
+    setStep("s2","done");
+    setStep("s3","done");
+
+    btn.innerText = "Uploaded ✓";
+    fileInput.value = "";
+
+  }catch(e){
+    alert("Upload failed. Please try again.");
+  }finally{
+    btn.disabled = false;
+  }
 }
 </script>
+
 </body>
 </html>
