@@ -4,142 +4,124 @@
 <meta charset="utf-8">
 <title>Scan2Print Upload</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-  body{
-    font-family: Arial;
-    background:#f4f7f6;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    margin:0;
-  }
+body{
+  font-family:Arial, sans-serif;
+  background:#f4f7f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh; /* FIXED mobile issue */
+  margin:0;
+}
 
-  .card{
-    background:#fff;
-    padding:28px;
-    border-radius:16px;
-    width:92%;
-    max-width:420px;
-    text-align:center;
-    border:1px solid #e6ecef;
-  }
+.card{
+  background:#fff;
+  padding:28px;
+  border-radius:18px;
+  width:92%;
+  max-width:420px;
+  text-align:center;
+  border:1px solid #e6ecef;
+}
 
-  .brand{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-    margin-bottom:18px;
-  }
+.logo{
+  width:128px;
+  margin-bottom:12px;
+}
 
-  .logo{
-    width:128px; /* 2× size */
-    height:auto;
-  }
+.uploadBox{
+  border:2px dashed #cfd8dc;
+  border-radius:18px;
+  padding:28px 16px;
+  cursor:pointer;
+  color:#607d8b;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  box-sizing:border-box;
+  margin:16px 0 10px;
+}
 
-  .brandName{
-    font-size:18px;
-    font-weight:800;
-  }
+.uploadBox:hover{
+  border-color:#2563eb;
+  background:#f0f7ff;
+}
 
-  /* 🔽 Upload box */
-  .uploadBox{
-    border:2px dashed #cfd8dc;
-    border-radius:14px;
-    padding:26px 16px;
-    cursor:pointer;
-    transition:.2s;
-    margin-bottom:14px;
-    color:#607d8b;
-  }
+.plus{
+  font-size:44px;
+  line-height:1;
+  color:#2563eb;
+}
 
-  .uploadBox:hover{
-    border-color:#2d7ff9;
-    background:#f7faff;
-  }
+.fileName{
+  font-size:14px;
+  color:#37474f;
+  word-break:break-all;
+}
 
-  .plus{
-    font-size:42px;
-    line-height:1;
-    color:#2d7ff9;
-  }
+input[type="file"]{
+  display:none;
+}
 
-  .fileName{
-    font-size:14px;
-    margin-top:6px;
-    color:#37474f;
-    word-break:break-all;
-  }
+button{
+  width:100%;
+  padding:14px;
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  cursor:pointer;
+}
 
-  input[type="file"]{
-    display:none;
-  }
+.queue{
+  margin-top:18px;
+  text-align:left;
+  font-size:14px;
+}
 
-  button{
-    width:100%;
-    padding:12px;
-    background:#2d7ff9;
-    color:#fff;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-    cursor:pointer;
-  }
+.step{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+  color:#607d8b;
+}
 
-  button:disabled{
-    opacity:.6;
-    cursor:not-allowed;
-  }
+.dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#cfd8dc;
+}
 
-  /* Status Queue */
-  .queue{
-    margin-top:18px;
-    text-align:left;
-    font-size:14px;
-  }
+.working .dot{
+  background:#2563eb;
+  animation:pulse 1s infinite;
+}
 
-  .step{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-bottom:8px;
-    color:#607d8b;
-  }
+.done .dot{
+  background:#2ecc71;
+}
 
-  .dot{
-    width:10px;
-    height:10px;
-    border-radius:50%;
-    background:#cfd8dc;
-  }
-
-  .working .dot{
-    background:#2d7ff9;
-    animation:pulse 1s infinite;
-  }
-
-  .done .dot{
-    background:#2ecc71;
-  }
-
-  @keyframes pulse{
-    0%{opacity:.3}
-    50%{opacity:1}
-    100%{opacity:.3}
-  }
+@keyframes pulse{
+  0%{opacity:.3}
+  50%{opacity:1}
+  100%{opacity:.3}
+}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <div class="brand">
-    <img src="logo.png" class="logo" alt="Scan2Print">
-    <div class="brandName">Scan2Print</div>
-  </div>
+  <img src="logo.png" class="logo">
 
-  <!-- Upload box -->
   <label class="uploadBox">
     <div class="plus">＋</div>
     <div>Tap to choose file</div>
@@ -161,63 +143,46 @@ const BOT_TOKEN = "8218702839:AAFYe9BDwUxyo9Ce1ZoIfBOb7nnLfQzJTv0";
 const CHAT_ID = "6231880924";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGyVFj84IlyIyw0kyoNmcSARmDw3IVVGluIawmz69dXEja1tXEszMXH7wDkfn47mmPlQ/exec";
 
-const fileInput = document.getElementById("file");
-const fileNameEl = document.getElementById("fileName");
+file.onchange=()=>{
+  fileName.innerText=file.files[0]?file.files[0].name:"";
+};
 
-fileInput.addEventListener("change", () => {
-  fileNameEl.innerText = fileInput.files[0]
-    ? fileInput.files[0].name
-    : "";
-});
-
-function setStep(id, state){
-  document.getElementById(id).className = "step " + state;
+function setStep(id,state){
+  document.getElementById(id).className="step "+state;
 }
 
 async function upload(){
-  if(!fileInput.files[0]){
-    alert("Please choose a file");
-    return;
-  }
+  if(!file.files[0]) return alert("Please choose a file");
 
-  document.getElementById("uploadBtn").disabled = true;
+  uploadBtn.disabled=true;
   setStep("s1","working");
 
-  try{
-    const fd = new FormData();
-    fd.append("document", fileInput.files[0]);
+  const fd=new FormData();
+  fd.append("document",file.files[0]);
 
-    const tgRes = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`,
-      { method:"POST", body:fd }
-    );
-    const tgData = await tgRes.json();
+  const tg=await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument?chat_id=${CHAT_ID}`,
+    {method:"POST",body:fd}
+  );
+  const data=await tg.json();
 
-    setStep("s1","done");
-    setStep("s2","working");
+  setStep("s1","done");
+  setStep("s2","working");
 
-    await fetch(SCRIPT_URL,{
-      method:"POST",
-      mode:"no-cors",
-      body:JSON.stringify({
-        shop:new URLSearchParams(location.search).get("shop") || "General",
-        fileName:fileInput.files[0].name,
-        fileId:tgData.result.document.file_id
-      })
-    });
+  await fetch(SCRIPT_URL,{
+    method:"POST",
+    mode:"no-cors",
+    body:JSON.stringify({
+      shop:new URLSearchParams(location.search).get("shop")||"General",
+      fileName:file.files[0].name,
+      fileId:data.result.document.file_id
+    })
+  });
 
-    setStep("s2","done");
-    setStep("s3","done");
-
-    document.getElementById("uploadBtn").innerText = "Uploaded ✓";
-    fileInput.value = "";
-    fileNameEl.innerText = "";
-
-  }catch(e){
-    alert("Upload failed. Please try again.");
-  }finally{
-    document.getElementById("uploadBtn").disabled = false;
-  }
+  setStep("s2","done");
+  setStep("s3","done");
+  uploadBtn.innerText="Uploaded ✓";
+  uploadBtn.disabled=false;
 }
 </script>
 
