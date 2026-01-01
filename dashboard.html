@@ -4,38 +4,31 @@
 <meta charset="utf-8">
 <title>Scan2Print Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-body{font-family:Arial;background:#f5f7f5;margin:0;padding:20px}
-.logo{width:88px}
-.header{display:flex;justify-content:space-between;align-items:center}
-.brand{display:flex;gap:14px;align-items:center}
-.sectionTitle{font-size:18px;font-weight:700;margin:24px 0 10px}
-
-.currentWrap{background:#fff;border:2px solid #2563eb;border-radius:18px;padding:16px}
-.currentFile{display:flex;justify-content:space-between;background:#f0f7ff;padding:14px;border-radius:14px;margin-bottom:10px}
-.fileActions{display:flex;gap:22px}
-button{padding:10px 14px;border-radius:10px;border:none;background:#2563eb;color:#fff;cursor:pointer}
-.doneBtn{background:#fff;color:#2563eb;border:2px solid #2563eb}
-
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:30px 0}
-.stat{background:#fff;border-radius:18px;padding:18px;text-align:center}
-.statValue{font-size:36px;font-weight:800}
-
-.filterBar{display:flex;gap:10px;margin-bottom:10px;align-items:center}
-
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden}
-th,td{padding:14px;border-bottom:1px solid #eee;font-size:14px}
-.deletedRow{opacity:.5}
+  body{font-family:Arial;background:#f5f7f5;margin:0;padding:20px}
+  .logo{width:88px}
+  .header{display:flex;justify-content:space-between;align-items:center}
+  .brand{display:flex;gap:14px;align-items:center}
+  .sectionTitle{font-size:18px;font-weight:700;margin:24px 0 10px}
+  .currentWrap{background:#fff;border:2px solid #2563eb;border-radius:18px;padding:16px}
+  .currentFile{display:flex;justify-content:space-between;background:#f0f7ff;padding:14px;border-radius:14px;margin-bottom:10px}
+  .fileActions{display:flex;gap:22px}
+  button{padding:10px 14px;border-radius:10px;border:none;background:#2563eb;color:#fff;cursor:pointer}
+  .doneBtn{background:#fff;color:#2563eb;border:2px solid #2563eb}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:30px 0}
+  .stat{background:#fff;border-radius:18px;padding:18px;text-align:center}
+  .statValue{font-size:36px;font-weight:800}
+  .filterBar{display:flex;gap:10px;margin-bottom:10px;align-items:center}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden}
+  th,td{padding:14px;border-bottom:1px solid #eee;font-size:14px}
+  .deletedRow{opacity:.5}
 </style>
 </head>
-
 <body>
 
 <div class="header">
   <div class="brand">
-    <img src="logo.png" class="logo">
-    <div>
+    <div class="logo"></div> <div>
       <h2 id="shopTitle"></h2>
       <div>Live document intake</div>
     </div>
@@ -57,6 +50,7 @@ th,td{padding:14px;border-bottom:1px solid #eee;font-size:14px}
     <option value="today">Today</option>
     <option value="week">Week</option>
     <option value="month">Month</option>
+    <option value="all">All Time</option>
   </select>
 
   <select id="status">
@@ -65,12 +59,12 @@ th,td{padding:14px;border-bottom:1px solid #eee;font-size:14px}
     <option value="DELETED">Deleted</option>
   </select>
 
-  <button onclick="load()">Apply</button>
+  <button onclick="load()">Apply Filters</button>
 </div>
 
 <table>
 <thead>
-<tr><th>Received</th><th>Document</th><th>Status</th></tr>
+  <tr><th>Received</th><th>Document</th><th>Status</th></tr>
 </thead>
 <tbody id="history"></tbody>
 </table>
@@ -81,18 +75,18 @@ const shop=new URLSearchParams(location.search).get("shop")||"General";
 shopTitle.innerText="Shop: "+shop;
 
 async function load(){
-  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&period=${period.value}`);
+  // Fetch everything so we can manage Current vs History locally
+  const res=await fetch(`${SCRIPT_URL}?shop=${shop}&period=all`);
   const d=await res.json();
 
   kToday.innerText=d.summary.today;
   kWeek.innerText=d.summary.week;
   kMonth.innerText=d.summary.month;
 
-  const active=d.files.filter(f=>f.status==="ACTIVE");
-  const deleted=d.files.filter(f=>f.status==="DELETED");
-
-  currentWrap.innerHTML=active.length
-    ? active.map(f=>`
+  // 1. Current Documents: Filter for ACTIVE from the full list
+  const activeFiles = d.files.filter(f => f.status === "ACTIVE");
+  currentWrap.innerHTML = activeFiles.length
+    ? activeFiles.map(f => `
       <div class="currentFile">
         <div>
           <b>${f.fileName}</b><br>
@@ -105,12 +99,25 @@ async function load(){
       </div>`).join("")
     : "Waiting for upload…";
 
-  let recent=d.files;
-  if(status.value==="ACTIVE") recent=active;
-  if(status.value==="DELETED") recent=deleted;
+  // 2. Recent Files: Filter based on UI selection
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  let recent = d.files.filter(f => {
+    const fDate = new Date(f.time);
+    
+    // Status Filter
+    if(status.value !== "ALL" && f.status !== status.value) return false;
+    
+    // Period Filter
+    if(period.value === "today" && fDate < startToday) return false;
+    // (Note: Week/Month can be added here or relied on from the AppScript)
+    
+    return true;
+  });
 
-  history.innerHTML=recent.map(f=>`
-    <tr class="${f.status==="DELETED"?"deletedRow":""}">
+  history.innerHTML = recent.map(f => `
+    <tr class="${f.status === "DELETED" ? "deletedRow" : ""}">
       <td>${new Date(f.time).toLocaleString()}</td>
       <td>${f.fileName}</td>
       <td>${f.status}</td>
@@ -118,7 +125,7 @@ async function load(){
 }
 
 async function done(id){
-  if(confirm("Mark this file as deleted?")){
+  if(confirm("Mark this file as completed?")){
     await fetch(`${SCRIPT_URL}?action=done&fileId=${id}`);
     load();
   }
@@ -126,6 +133,5 @@ async function done(id){
 
 load();
 </script>
-
 </body>
 </html>
